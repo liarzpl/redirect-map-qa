@@ -20,16 +20,7 @@ import { normalizeHeader } from './lib/columns';
 import { FileParseError, getXlsxVersion, parseWorkbookFile } from './lib/excel';
 import { downloadFixedMapCsv, downloadIssuesCsv } from './lib/export-csv';
 import { joinGsc, sortByPriority } from './lib/gsc';
-import {
-  flagHelp,
-  helpCodes,
-  helpFlags,
-  helpSeverities,
-  severityHelp,
-  statusHelp,
-  t,
-  type Lang,
-} from './lib/i18n';
+import { helpCodes, helpFlags, helpSeverities, t, type Lang } from './lib/i18n';
 import { logger } from './lib/logger';
 import type { NormalizeOptions } from './lib/normalize';
 import {
@@ -56,8 +47,17 @@ interface UploadState extends ParsedUpload {
 }
 
 type SeverityName = 'error' | 'warning' | 'notice' | 'ok';
-type SeverityFilter = 'all' | SeverityName;
-type MetricKey = 'total' | SeverityName | 'gsc';
+type SeverityFilter = 'all' | 'issues' | SeverityName;
+type MetricKey = 'total' | 'issues' | 'ok';
+
+const FLAG_PRIORITY: AuditFlag[] = [
+  'loop',
+  'conflict',
+  'self',
+  'chain',
+  'duplicate',
+  'unsupported',
+];
 
 const PREVIEW_N = 8;
 const REDIRECT_CODES = new Set(['301', '302', '303', '304', '307']);
@@ -113,14 +113,11 @@ let records: RedirectRecord[] = [];
 let summary: AuditSummary | null = null;
 let page = 0;
 let filter = 'all';
-let flagMulti: string[] = [];
 let severityFilter: SeverityFilter = 'all';
-let gscOnly = false;
 let typeFilter = 'all';
 let searchQuery = '';
 let waitingWorker: ServiceWorker | null = null;
 let auditWorker: Worker | null = null;
-let tipSeq = 0;
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -194,6 +191,7 @@ function applyI18n(): void {
   $('dup-update').textContent = t(lang, 'dupUpdate');
   $('dup-note').textContent = t(lang, 'dupNote');
   $('help-summary').textContent = t(lang, 'helpSummary');
+  $('filter-summary').textContent = t(lang, 'filterPanel');
   $('severity-label').textContent = t(lang, 'severityLabel');
   $('type-label').textContent = t(lang, 'typeLabel');
   $('search-label').textContent = t(lang, 'searchLabel');
@@ -203,6 +201,7 @@ function applyI18n(): void {
 
   document.querySelectorAll<HTMLElement>('[data-sev-label]').forEach((el) => {
     if (el.dataset.sevLabel === 'all') el.textContent = t(lang, 'all');
+    if (el.dataset.sevLabel === 'issues') el.textContent = t(lang, 'metricIssues');
   });
 
   const flagSelect = $('flag-filter') as HTMLSelectElement;
@@ -262,26 +261,6 @@ function renderGlossary(): void {
     grid.append(section);
   }
   body.append(grid);
-}
-
-function tipWrap(label: string, text: string): HTMLSpanElement {
-  const tip = document.createElement('span');
-  tip.className = 'tip';
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'tip-btn';
-  btn.textContent = '?';
-  btn.setAttribute('aria-label', label);
-  btn.dataset.help = text;
-  const panel = document.createElement('span');
-  panel.className = 'tip-panel';
-  panel.setAttribute('role', 'tooltip');
-  tipSeq += 1;
-  panel.id = `tip-${tipSeq}`;
-  panel.textContent = text;
-  btn.setAttribute('aria-describedby', panel.id);
-  tip.append(btn, panel);
-  return tip;
 }
 
 function headerIndex(headers: string[], name: string): number {
@@ -614,20 +593,9 @@ function runAuditMainThread(
   return { records: sortByPriority(redirects), summary: sum };
 }
 
-function syncToggles(): void {
-  document.querySelectorAll<HTMLButtonElement>('.flag-toggle').forEach((btn) => {
-    const flag = btn.dataset.flag ?? '';
-    const on =
-      flagMulti.length > 0 ? flagMulti.includes(flag) : filter !== 'all' && filter === flag;
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-  });
-}
-
 function clearFilters(): void {
   severityFilter = 'all';
-  gscOnly = false;
   filter = 'all';
-  flagMulti = [];
   typeFilter = 'all';
   searchQuery = '';
   ($('row-search') as HTMLInputElement).value = '';
@@ -637,7 +605,6 @@ function clearFilters(): void {
     'input[name="severity"][value="all"]',
   );
   if (allRadio) allRadio.checked = true;
-  syncToggles();
 }
 
 function fillTypeFilter(): void {
@@ -741,14 +708,11 @@ function metricPressed(key: MetricKey): boolean {
   if (key === 'total') {
     return (
       severityFilter === 'all' &&
-      !gscOnly &&
-      flagMulti.length === 0 &&
       filter === 'all' &&
       typeFilter === 'all' &&
       searchQuery.trim() === ''
     );
   }
-  if (key === 'gsc') return gscOnly;
   return severityFilter === key;
 }
 
@@ -773,65 +737,21 @@ function renderSummary(): void {
   wrap.hidden = false;
 
   const counts = countSeverities(records);
-  const items: Array<{
-    key: MetricKey;
-    label: string;
-    value: number;
-    dot: string;
-    help: string;
-  }> = [
+  const items: Array<{ key: MetricKey; label: string; value: number }> = [
+    { key: 'total', label: t(lang, 'metricTotal'), value: summary.total },
     {
-      key: 'total',
-      label: t(lang, 'metricTotal'),
-      value: summary.total,
-      dot: '',
-      help: t(lang, 'metricTotalHelp'),
+      key: 'issues',
+      label: t(lang, 'metricIssues'),
+      value: counts.error + counts.warning + counts.notice,
     },
-    {
-      key: 'error',
-      label: 'error',
-      value: counts.error,
-      dot: 'dot-error',
-      help: severityHelp(lang, 'error'),
-    },
-    {
-      key: 'warning',
-      label: 'warning',
-      value: counts.warning,
-      dot: 'dot-warning',
-      help: severityHelp(lang, 'warning'),
-    },
-    {
-      key: 'notice',
-      label: 'notice',
-      value: counts.notice,
-      dot: 'dot-notice',
-      help: severityHelp(lang, 'notice'),
-    },
-    {
-      key: 'ok',
-      label: 'ok',
-      value: counts.ok,
-      dot: 'dot-ok',
-      help: severityHelp(lang, 'ok'),
-    },
+    { key: 'ok', label: 'ok', value: counts.ok },
   ];
-  if (summary.withGsc > 0) {
-    items.push({
-      key: 'gsc',
-      label: t(lang, 'metricGsc'),
-      value: summary.withGsc,
-      dot: '',
-      help: t(lang, 'metricGsc'),
-    });
-  }
 
   for (const item of items) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'metric tip';
+    btn.className = 'metric';
     btn.dataset.metric = item.key;
-    btn.dataset.help = item.help;
     btn.setAttribute('aria-pressed', metricPressed(item.key) ? 'true' : 'false');
 
     const value = document.createElement('span');
@@ -839,42 +759,14 @@ function renderSummary(): void {
     value.textContent = fmt(item.value);
     const label = document.createElement('span');
     label.className = 'metric-label';
-    if (item.dot) {
-      const dot = document.createElement('span');
-      dot.className = `dot ${item.dot}`;
-      dot.setAttribute('aria-hidden', 'true');
-      label.append(dot);
-    }
-    const name = document.createElement('span');
-    name.textContent = item.label;
-    label.append(name);
-    const panel = document.createElement('span');
-    panel.className = 'tip-panel';
-    panel.setAttribute('role', 'tooltip');
-    panel.textContent = item.help;
-    btn.append(value, label, panel);
+    label.textContent = item.label;
+    btn.append(value, label);
     btn.addEventListener('click', () => onMetric(item.key));
     box.append(btn);
   }
 
-  const parts: string[] = [];
-  const errBits = [
-    summary.loop ? `loop ${fmt(summary.loop)}` : '',
-    summary.conflict ? `conflict ${fmt(summary.conflict)}` : '',
-    summary.self ? `self ${fmt(summary.self)}` : '',
-  ].filter(Boolean);
-  if (errBits.length) parts.push(`error ${fmt(counts.error)} — ${errBits.join(' · ')}`);
-  const warnBits = [
-    summary.chain ? `chain ${fmt(summary.chain)}` : '',
-    summary.duplicate ? `duplicate ${fmt(summary.duplicate)}` : '',
-  ].filter(Boolean);
-  if (warnBits.length) {
-    parts.push(`warning ${fmt(counts.warning)} — ${warnBits.join(' · ')}`);
-  }
-  if (summary.unsupported) {
-    parts.push(`notice ${fmt(counts.notice)} — unsupported ${fmt(summary.unsupported)}`);
-  }
-  breakdown.textContent = parts.join('   ·   ');
+  breakdown.textContent =
+    summary.withGsc > 0 ? `${t(lang, 'metricGsc')}: ${fmt(summary.withGsc)}` : '';
 }
 
 function onMetric(key: MetricKey): void {
@@ -885,9 +777,7 @@ function onMetric(key: MetricKey): void {
     renderTable();
     return;
   }
-  if (key === 'gsc') {
-    gscOnly = !gscOnly;
-  } else if (severityFilter === key) {
+  if (severityFilter === key) {
     severityFilter = 'all';
     const allRadio = document.querySelector<HTMLInputElement>(
       'input[name="severity"][value="all"]',
@@ -915,13 +805,12 @@ function flagHit(row: RedirectRecord, flag: string): boolean {
 function filteredRecords(): RedirectRecord[] {
   const query = searchQuery.trim().toLocaleLowerCase(lang === 'en' ? 'en-US' : 'tr-TR');
   return records.filter((row) => {
-    if (gscOnly && row.gscClicks === null) return false;
-    if (severityFilter !== 'all' && rowSeverity(row) !== severityFilter) return false;
-    if (flagMulti.length > 0) {
-      if (!flagMulti.some((flag) => flagHit(row, flag))) return false;
-    } else if (!flagHit(row, filter)) {
+    if (severityFilter === 'issues') {
+      if (rowSeverity(row) === 'ok') return false;
+    } else if (severityFilter !== 'all' && rowSeverity(row) !== severityFilter) {
       return false;
     }
+    if (!flagHit(row, filter)) return false;
     if (typeFilter !== 'all' && row.type !== typeFilter) return false;
     if (query) {
       const hay = `${row.sourceRaw} ${row.destinationRaw}`.toLocaleLowerCase(
@@ -974,20 +863,18 @@ function chainText(row: RedirectRecord, hops: Map<string, Hop>): string {
   return parts.join(' → ');
 }
 
-function thCell(label: string, className = '', help = ''): HTMLTableCellElement {
+function thCell(label: string, className = ''): HTMLTableCellElement {
   const th = document.createElement('th');
   if (className) th.className = className;
-  if (!help) {
-    th.textContent = label;
-    return th;
-  }
-  const wrap = document.createElement('span');
-  wrap.className = 'th-label';
-  const text = document.createElement('span');
-  text.textContent = label;
-  wrap.append(text, tipWrap(label, help));
-  th.append(wrap);
+  th.textContent = label;
   return th;
+}
+
+function primaryIssue(row: RedirectRecord): AuditFlag | 'ok' {
+  for (const flag of FLAG_PRIORITY) {
+    if (row.flags.includes(flag)) return flag;
+  }
+  return 'ok';
 }
 
 function renderTable(): void {
@@ -1008,11 +895,10 @@ function renderTable(): void {
   const hr = document.createElement('tr');
   hr.append(
     thCell(t(lang, 'colInclude')),
-    thCell(t(lang, 'colSeverity')),
-    thCell(t(lang, 'colFlags'), '', t(lang, 'helpFlags')),
+    thCell(t(lang, 'colStatus')),
     thCell('source'),
     thCell('destination'),
-    thCell('type', '', t(lang, 'helpTypes')),
+    thCell('type'),
     thCell('chain'),
     thCell('flatten→'),
   );
@@ -1028,7 +914,6 @@ function renderTable(): void {
 
   for (const row of slice) {
     const tr = document.createElement('tr');
-    const severity = rowSeverity(row);
     const inactive = isInactive(row);
     if (inactive) tr.classList.add('is-inactive');
 
@@ -1051,32 +936,22 @@ function renderTable(): void {
     }
     tr.append(tdCheck);
 
-    const tdSev = document.createElement('td');
-    const sevBadge = document.createElement('span');
-    sevBadge.className = `badge badge-${severity}`;
-    sevBadge.textContent = severity;
-    tdSev.append(sevBadge, tipWrap(severity, severityHelp(lang, severity)));
-    tr.append(tdSev);
-
-    const tdFlags = document.createElement('td');
-    tdFlags.className = 'allow-tip';
-    const flags = row.flags.length ? row.flags : (['ok'] as const);
-    for (const flag of flags) {
-      const group = document.createElement('span');
-      group.className = 'flag';
-      const badge = document.createElement('span');
-      badge.className = `badge badge-${flagSeverity(flag)}`;
-      badge.textContent = flag;
-      group.append(badge, tipWrap(flag, flagHelp(lang, flag)));
-      tdFlags.append(group);
+    const primary = primaryIssue(row);
+    const tdStatus = document.createElement('td');
+    tdStatus.className = 'status-cell';
+    const chip = document.createElement('span');
+    chip.className = `badge badge-${flagSeverity(primary)}`;
+    chip.textContent = primary;
+    tdStatus.append(chip);
+    const moreBits: string[] = row.flags.filter((flag) => flag !== primary);
+    if (inactive) moreBits.push('inactive');
+    if (moreBits.length) {
+      const more = document.createElement('span');
+      more.className = 'status-more';
+      more.textContent = moreBits.join(', ');
+      tdStatus.append(more);
     }
-    if (inactive) {
-      const badge = document.createElement('span');
-      badge.className = 'badge badge-notice';
-      badge.textContent = 'inactive';
-      tdFlags.append(badge);
-    }
-    tr.append(tdFlags);
+    tr.append(tdStatus);
 
     const source = document.createElement('td');
     source.className = 'mono clip';
@@ -1089,13 +964,8 @@ function renderTable(): void {
     tr.append(source, dest);
 
     const tdType = document.createElement('td');
-    tdType.className = 'allow-tip';
-    const code = document.createElement('span');
-    code.className = 'type-code';
-    code.textContent = row.type;
-    tdType.append(code);
-    const codeText = statusHelp(lang, row.type);
-    tdType.append(tipWrap(row.type || 'type', codeText ?? t(lang, 'codeUnknown')));
+    tdType.className = 'mono';
+    tdType.textContent = row.type;
     tr.append(tdType);
 
     const path = chainText(row, hops);
@@ -1196,52 +1066,6 @@ function setupPwaUi(): void {
   $('install-hint').textContent = `Sürüm ${APP_VERSION}. Veri sunucuya gitmez.`;
 }
 
-function bindAssist(): void {
-  const assist = $('assist');
-  const hostOf = (target: EventTarget | null): HTMLElement | null => {
-    if (!(target instanceof Element)) return null;
-    return target.closest<HTMLElement>('[data-help]');
-  };
-  document.addEventListener('mouseover', (event) => {
-    const host = hostOf(event.target);
-    if (!host) return;
-    assist.textContent = host.dataset.help ?? '';
-  });
-  document.addEventListener('mouseout', (event) => {
-    const host = hostOf(event.target);
-    if (!host) return;
-    assist.textContent = '';
-  });
-  document.addEventListener('focusin', (event) => {
-    const host = hostOf(event.target);
-    if (!host) return;
-    assist.textContent = host.dataset.help ?? '';
-  });
-  document.addEventListener('focusout', (event) => {
-    const host = hostOf(event.target);
-    if (!host) return;
-    assist.textContent = '';
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    assist.textContent = '';
-    document.querySelectorAll('.tip').forEach((tip) => tip.classList.add('is-suppressed'));
-    const active = document.activeElement;
-    if (active instanceof HTMLElement && active.closest('.tip')) active.blur();
-    const details = $('help-details') as HTMLDetailsElement;
-    if (details.open && active instanceof Node && details.contains(active)) {
-      details.open = false;
-    }
-  });
-  document.addEventListener('pointermove', (event) => {
-    document.querySelectorAll('.tip.is-suppressed').forEach((tip) => {
-      if (tip instanceof HTMLElement && !tip.contains(event.target as Node)) {
-        tip.classList.remove('is-suppressed');
-      }
-    });
-  });
-}
-
 function bindDropzone(): void {
   const zone = $('dropzone');
   zone.addEventListener('dragover', (event) => {
@@ -1296,32 +1120,9 @@ function init(): void {
 
   ($('flag-filter') as HTMLSelectElement).addEventListener('change', (event) => {
     filter = (event.target as HTMLSelectElement).value;
-    flagMulti = filter === 'all' ? [] : [filter];
-    syncToggles();
     page = 0;
     paintMetricState();
     renderTable();
-  });
-
-  document.querySelectorAll<HTMLButtonElement>('.flag-toggle').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const pressed = btn.getAttribute('aria-pressed') === 'true';
-      btn.setAttribute('aria-pressed', pressed ? 'false' : 'true');
-      flagMulti = [
-        ...document.querySelectorAll<HTMLButtonElement>('.flag-toggle[aria-pressed="true"]'),
-      ].map((item) => item.dataset.flag ?? '');
-      const select = $('flag-filter') as HTMLSelectElement;
-      if (flagMulti.length === 1) {
-        filter = flagMulti[0] ?? 'all';
-        select.value = filter;
-      } else {
-        filter = 'all';
-        select.value = 'all';
-      }
-      page = 0;
-      paintMetricState();
-      renderTable();
-    });
   });
 
   document.querySelectorAll<HTMLInputElement>('input[name="severity"]').forEach((input) => {
@@ -1364,8 +1165,6 @@ function init(): void {
     }
     renderTable();
   });
-
-  bindAssist();
 
   const storagePanel = $('storage-panel');
   if (isStorageEnabled()) {

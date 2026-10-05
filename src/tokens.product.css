@@ -23,7 +23,7 @@
 
   /* Tablo */
   --table-font: var(--text-sm);
-  --table-cell-y: var(--space-2);
+  --table-cell-y: var(--space-3);
   --table-cell-x: var(--space-3);
   --url-font: var(--font-mono);
 }

@@ -80,9 +80,9 @@ h1 {
 }
 
 .lead {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   max-width: 65ch;
-  color: var(--color-muted);
+  color: var(--color-text);
   font-size: var(--text-base);
   font-weight: var(--weight-regular);
   line-height: var(--leading-normal);
@@ -117,13 +117,6 @@ h1 {
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
-}
-
-.step-num {
-  color: var(--color-muted);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-normal);
 }
 
 .card-subtitle {
@@ -612,8 +605,18 @@ select,
   min-width: calc(var(--space-12) * 4);
 }
 
+.filter-advanced {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
 .segment {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   border: var(--border-default);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -656,38 +659,6 @@ select,
   color: var(--color-accent-text);
 }
 
-.flag-toggles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.flag-toggle {
-  height: var(--control-height);
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-}
-
-.flag-toggle[aria-pressed='true'] {
-  background: var(--color-accent-subtle);
-  border-color: var(--color-accent);
-  color: var(--color-accent-text);
-}
-
-.assist {
-  margin: var(--space-3) 0 0;
-  min-height: calc(var(--text-sm) * var(--leading-normal));
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  line-height: var(--leading-normal);
-}
-
-.assist:empty {
-  display: none;
-}
-
 .table-wrap {
   overflow: auto;
   max-height: 70vh;
@@ -723,12 +694,6 @@ th {
   font-weight: var(--weight-medium);
 }
 
-.th-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
 td.clip {
   max-width: 36ch;
   overflow: hidden;
@@ -761,82 +726,13 @@ tbody tr.is-inactive {
   color: var(--color-muted);
 }
 
-td.allow-tip {
-  overflow: visible;
-  white-space: normal;
+.status-cell {
+  white-space: nowrap;
 }
 
-.flag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-right: var(--space-1);
-}
-
-.type-code {
-  font-family: var(--url-font);
-  font-size: var(--text-sm);
-}
-
-.tip {
-  position: relative;
-  display: inline-flex;
-  vertical-align: middle;
-}
-
-.tip-btn {
-  width: var(--space-6);
-  height: var(--space-6);
-  padding: 0;
-  border-radius: var(--radius-full);
+.status-more {
+  margin-left: var(--space-2);
   color: var(--color-muted);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-tight);
-}
-
-.tip-panel {
-  position: absolute;
-  z-index: 5;
-  top: calc(100% + var(--space-1));
-  left: 0;
-  width: max-content;
-  max-width: 36ch;
-  padding: var(--space-2) var(--space-3);
-  border: var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: var(--shadow-sm);
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-regular);
-  line-height: var(--leading-normal);
-  white-space: normal;
-  text-align: left;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity var(--duration-fast) var(--ease-out),
-    visibility var(--duration-fast) var(--ease-out);
-}
-
-.metric .tip-panel {
-  top: auto;
-  bottom: calc(100% + var(--space-1));
-}
-
-.tip:hover:not(.is-suppressed) > .tip-panel,
-.tip:focus-within:not(.is-suppressed) > .tip-panel,
-.metric.tip:hover:not(.is-suppressed) > .tip-panel,
-.metric.tip:focus-visible:not(.is-suppressed) > .tip-panel {
-  opacity: 1;
-  visibility: visible;
-}
-
-.tip:hover,
-.tip:focus-within {
-  z-index: 4;
 }
 
 .sample + .sample {
@@ -940,23 +836,8 @@ td.allow-tip {
   }
 
   .metric {
-    flex: 1 1 calc(50% - var(--border-width));
-    max-width: 50%;
-    border-left: 0;
-    border-top: var(--border-default);
-  }
-
-  .metric:nth-child(odd) {
-    border-left: 0;
-  }
-
-  .metric:nth-child(even) {
-    border-left: var(--border-default);
-  }
-
-  .metric:first-child,
-  .metric:nth-child(2) {
-    border-top: 0;
+    flex: 1 1 0;
+    padding: var(--space-3);
   }
 
   .actions button {
