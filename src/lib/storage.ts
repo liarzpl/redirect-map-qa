@@ -9,6 +9,7 @@
  */
 
 import { BACKUP_REMIND_DAYS, LOCAL_STORAGE_ENABLED } from '../config';
+import { t, type Lang } from './i18n';
 import { logger } from './logger';
 
 const DB_NAME = 'tarayici-arac-db';
@@ -176,6 +177,7 @@ export async function shouldRemindBackup(): Promise<boolean> {
 export function mountStoragePanel(
   container: HTMLElement,
   onExport: () => Promise<void>,
+  lang: Lang = 'tr',
 ): void {
   if (!LOCAL_STORAGE_ENABLED) {
     container.hidden = true;
@@ -188,21 +190,19 @@ export function mountStoragePanel(
 
   const note = document.createElement('p');
   note.className = 'storage-note';
-  note.textContent =
-    'Veri yalnız bu cihazda kalır. Hiçbir sunucuya gönderilmez. Düzenli olarak Excel’e yedekleyin.';
+  note.textContent = t(lang, 'storageNote');
 
   const remind = document.createElement('p');
   remind.className = 'storage-remind';
   remind.hidden = true;
-  remind.textContent =
-    'Uyarı: Son Excel yedeğinden uzun süre geçti. «Excel’e yedekle» ile yedek alın.';
+  remind.textContent = t(lang, 'storageRemind');
 
   const actions = document.createElement('div');
   actions.className = 'storage-actions';
 
   const btnExport = document.createElement('button');
   btnExport.type = 'button';
-  btnExport.textContent = 'Excel’e yedekle / dışa aktar';
+  btnExport.textContent = t(lang, 'storageExport');
   btnExport.addEventListener('click', () => {
     void (async () => {
       await onExport();
@@ -214,11 +214,9 @@ export function mountStoragePanel(
   const btnClear = document.createElement('button');
   btnClear.type = 'button';
   btnClear.className = 'danger';
-  btnClear.textContent = 'Tüm veriyi sil';
+  btnClear.textContent = t(lang, 'storageClear');
   btnClear.addEventListener('click', () => {
-    const ok = window.confirm(
-      'Bu cihazdaki tüm yerel veriler silinecek. Emin misiniz?',
-    );
+    const ok = window.confirm(t(lang, 'storageConfirm'));
     if (!ok) return;
     void clearAllData().then(() => {
       remind.hidden = false;
