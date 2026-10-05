@@ -1,5 +1,9 @@
 # Redirect Map QA
 
+Merge Rank Math, Redirection, and plain CSV/XLSX redirect maps **in the browser**. Flag duplicate sources, conflicting destinations, chains, loops, and self-redirects, then download a cleaned map and an issues report.
+
+**[Live demo](https://liarzpl.github.io/redirect-map-qa/)** · Privacy: files never leave the browser — no server, no OAuth, no analytics.
+
 Rank Math Redirects, Redirection (John Godley) ve düz `source,destination` CSV/XLSX dışa aktarımlarını **tarayıcıda** birleştirir; yinelenen kaynak, çakışan hedef, zincir, döngü ve self-redirect bulur. Opsiyonel Google Search Console (GSC) Pages/Performance CSV ile tıklama önceliği ekler. Düzeltilmiş map CSV ve sorun raporu indirir.
 
 **Veri cihazınızda kalır.** Sunucu yok, OAuth yok, analytics yok, canlı HTTP/crawl yok.
@@ -7,6 +11,10 @@ Rank Math Redirects, Redirection (John Godley) ve düz `source,destination` CSV/
 Lisans: MIT · Telif: liarzpl
 
 ## Hızlı başlangıç
+
+### Demo
+
+[https://liarzpl.github.io/redirect-map-qa/](https://liarzpl.github.io/redirect-map-qa/)
 
 **Node.js:** `^22.12` (`.nvmrc` = 22.20.0)
 
