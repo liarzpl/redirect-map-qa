@@ -1,0 +1,128 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+import * as XLSX from 'xlsx';
+XLSX.set_fs(fs);
+import { MAX_FILE_BYTES, MAX_ROWS } from '../src/config';
+import {
+  assertAllowedFile,
+  FileParseError,
+  getExtension,
+  getXlsxVersion,
+  parseWorkbookFile,
+} from '../src/lib/excel';
+import { escapeFormulaCell } from '../src/lib/formula-guard';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const fixtures = path.join(here, 'fixtures');
+
+function fileFromFixture(name: string, type?: string): File {
+  const buf = fs.readFileSync(path.join(fixtures, name));
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  return new File([ab], name, {
+    type: type ?? 'application/octet-stream',
+  });
+}
+
+describe('SheetJS sürümü', () => {
+  it('0.20.2 veya üstüdür (CVE’li 0.18.5 değil)', () => {
+    const v = getXlsxVersion();
+    expect(v).toMatch(/^0\.20\./);
+    const parts = v.split('.').map(Number);
+    expect(parts[0]).toBe(0);
+    expect(parts[1]).toBeGreaterThanOrEqual(20);
+    expect(XLSX.version).toBe(v);
+  });
+});
+
+describe('assertAllowedFile / uzantı', () => {
+  it('boş dosyayı reddeder', () => {
+    const f = new File([], 'bos.xlsx');
+    expect(() => assertAllowedFile(f)).toThrow(FileParseError);
+  });
+
+  it('yanlış uzantıyı reddeder', () => {
+    const f = new File([new Uint8Array([1, 2, 3])], 'not.pdf');
+    expect(() => assertAllowedFile(f)).toThrow(/uzantı/i);
+  });
+
+  it('boyut sınırını reddeder', () => {
+    const big = new File([new Uint8Array(MAX_FILE_BYTES + 1)], 'buyuk.xlsx');
+    expect(() => assertAllowedFile(big)).toThrow(/büyük/i);
+  });
+
+  it('uzantı yardımcısı', () => {
+    expect(getExtension('a.XLSX')).toBe('.xlsx');
+    expect(getExtension('a')).toBe('');
+  });
+});
+
+describe('parseWorkbookFile fixtures', () => {
+  it('geçerli xlsx okur', async () => {
+    const file = fileFromFixture('gecerli.xlsx');
+    const parsed = await parseWorkbookFile(file);
+    expect(parsed.headers).toContain('Ürün Adı');
+    expect(parsed.rows.length).toBeGreaterThan(0);
+  });
+
+  it('geçerli csv okur', async () => {
+    const file = fileFromFixture('gecerli.csv', 'text/csv');
+    const parsed = await parseWorkbookFile(file);
+    expect(parsed.headers.map((h) => h.trim())).toEqual(
+      expect.arrayContaining(['Ürün Adı', 'Adet', 'Fiyat']),
+    );
+  });
+
+  it('formül içeren dosyayı okur (hücre metin kalır)', async () => {
+    const file = fileFromFixture('formul.xlsx');
+    const parsed = await parseWorkbookFile(file);
+    const flat = parsed.rows.flat().map(String);
+    expect(flat.some((c) => c.startsWith('=') || c.startsWith('+') || c.startsWith('@'))).toBe(
+      true,
+    );
+  });
+
+  it('bozuk dosyada anlaşılır hata verir', async () => {
+    const file = fileFromFixture('bozuk.xlsx');
+    await expect(parseWorkbookFile(file)).rejects.toThrow(FileParseError);
+  });
+
+  it('satır sınırını aşan dosyayı reddeder', async () => {
+    // Dinamik büyük sayfa (fixture yoksa üretilmiş olmalı)
+    const bigPath = path.join(fixtures, 'buyuk-satir.xlsx');
+    if (!fs.existsSync(bigPath)) {
+      // test ortamında üret
+      const headers = ['Ürün Adı', 'Adet', 'Fiyat'];
+      const rows = Array.from({ length: MAX_ROWS + 10 }, (_, i) => [
+        `Urun ${i}`,
+        i,
+        1.5,
+      ]);
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Data');
+      const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+      fs.writeFileSync(bigPath, buf);
+    }
+    const file = fileFromFixture('buyuk-satir.xlsx');
+    await expect(parseWorkbookFile(file)).rejects.toThrow(/satır/i);
+  });
+});
+
+describe('çıktı kaçırma entegrasyonu', () => {
+  it('yazılan hücreler kaçırılmış olur', () => {
+    const headers = ['Ürün Adı', 'Adet', 'Fiyat', 'Not'];
+    const rows = [
+      ['Kalem', 2, 10, '=HYPERLINK("x")'],
+      ['Defter', -1, 5.5, '+1+1'],
+    ];
+    const safe = [
+      headers.map(escapeFormulaCell),
+      ...rows.map((r) => r.map(escapeFormulaCell)),
+    ];
+    expect(safe[1]![3]).toBe("'=HYPERLINK(\"x\")");
+    expect(safe[2]![3]).toBe("'+1+1");
+    expect(safe[2]![1]).toBe(-1);
+  });
+});

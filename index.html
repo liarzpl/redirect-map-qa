@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP shared/csp.mjs ile hizalı (scripts/sync-csp.mjs + Vite eklentisi) -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; worker-src 'self'"
+    />
+    <meta name="theme-color" content="#1a2332" />
+    <meta
+      name="description"
+      content="İstemci tarafı Excel/CSV aracı — veriniz cihazınızdan çıkmaz."
+    />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <title>Excel/CSV Araç Şablonu</title>
+  </head>
+  <body>
+    <main>
+      <div id="update-banner" class="update-banner" hidden>
+        <span id="update-banner-text">Yeni sürüm hazır.</span>
+        <button type="button" id="btn-refresh" class="primary">Yenile</button>
+      </div>
+
+      <header>
+        <h1 id="app-title">Excel/CSV Araç Şablonu</h1>
+        <p class="lead">
+          Dosyanız yalnız tarayıcınızda işlenir. Sunucu yok, analytics yok,
+          üçüncü parti istek yok.
+        </p>
+        <p class="muted">
+          Zorunlu kolonlar (başlık adına göre):
+          <strong id="required-cols"></strong>
+          · <span id="xlsx-version" class="badge"></span>
+        </p>
+      </header>
+
+      <section class="card" aria-labelledby="upload-heading">
+        <h2 id="upload-heading" class="visually-hidden">Dosya yükle</h2>
+        <label class="file-label">
+          Dosya seç (.xlsx / .xls / .csv)
+          <input
+            id="file-input"
+            type="file"
+            accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+          />
+        </label>
+        <div id="status" role="status" aria-live="polite"></div>
+        <div class="actions">
+          <button type="button" id="btn-download-xlsx" class="primary" disabled>
+            Excel indir (kaçırılmış)
+          </button>
+          <button type="button" id="btn-download-csv" disabled>
+            CSV indir (kaçırılmış)
+          </button>
+        </div>
+      </section>
+
+      <section class="card" id="preview-wrap" hidden>
+        <h2 class="card-title">Önizleme</h2>
+        <p id="preview-note" class="muted"></p>
+        <div class="table-wrap">
+          <table>
+            <thead id="preview-head"></thead>
+            <tbody id="preview-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="storage-panel" hidden>
+        <h2 class="card-title">Yerel saklama</h2>
+      </section>
+
+      <section class="card" id="pwa-panel" hidden>
+        <h2 class="card-title">Ana ekrana ekle (PWA)</h2>
+        <p id="install-hint" class="muted"></p>
+      </section>
+
+      <footer class="muted site-footer">
+        MIT Lisans · Şablon — yeni projede <code>src/config.ts</code> ve demo
+        akışını özelleştirin.
+      </footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

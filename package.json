@@ -1,0 +1,35 @@
+{
+  "name": "redirect-map-qa",
+  "version": "0.1.0",
+  "description": "Rank Math + Redirection CSV birleştirme ve yönlendirme haritası QA — istemci tarafı",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "fixtures": "tsx scripts/generate-fixtures.ts",
+    "audit:check": "npm audit --audit-level=high",
+    "sync:csp": "node scripts/sync-csp.mjs",
+    "generate:sw": "node scripts/generate-sw.mjs",
+    "prebuild": "node scripts/sync-csp.mjs && node scripts/generate-sw.mjs",
+    "pretest": "node scripts/sync-csp.mjs"
+  },
+  "dependencies": {
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "jsdom": "^25.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^6.3.5",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+  }
+}
