@@ -32,7 +32,7 @@
         <div class="header-row">
           <h1 id="app-title">Redirect Map QA</h1>
           <label class="lang-select">
-            <span class="visually-hidden">Dil</span>
+            <span class="visually-hidden" id="lang-label">Dil</span>
             <select id="lang-select" aria-label="Language">
               <option value="tr" selected>TR</option>
               <option value="en">EN</option>
@@ -244,16 +244,16 @@
       </details>
 
       <section class="card" id="storage-panel" hidden>
-        <h2 class="card-title">Yerel saklama</h2>
+        <h2 class="card-title" id="storage-heading">Yerel saklama</h2>
       </section>
 
       <section class="card" id="pwa-panel" hidden>
-        <h2 class="card-title">Ana ekrana ekle (PWA)</h2>
+        <h2 class="card-title" id="pwa-heading">Ana ekrana ekle (PWA)</h2>
         <p id="install-hint" class="hint"></p>
       </section>
 
       <footer class="muted site-footer">
-        <p>
+        <p id="footer-note">
           Canlı HTTP kontrolü yok · Regex/wildcard desteklenmiyor (bayraklanır) ·
           MIT · SheetJS 0.20.3
         </p>
