@@ -377,7 +377,7 @@ function renderMapping(): void {
       const sel = document.createElement('select');
       const empty = document.createElement('option');
       empty.value = '';
-      empty.textContent = '—';
+      empty.textContent = 'yok';
       sel.append(empty);
       upload.headers.forEach((header, index) => {
         const opt = document.createElement('option');
@@ -465,12 +465,7 @@ function renderPreview(): void {
     for (const message of previewWarnings(upload)) {
       const box = document.createElement('p');
       box.className = 'callout callout-warning';
-      const badge = document.createElement('span');
-      badge.className = 'badge badge-warning';
-      badge.textContent = 'warning';
-      const text = document.createElement('span');
-      text.textContent = `${upload.fileName} — ${message}`;
-      box.append(badge, text);
+      box.textContent = `${upload.fileName}: ${message}`;
       warnings.append(box);
     }
 
