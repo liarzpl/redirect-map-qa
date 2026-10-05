@@ -20,6 +20,11 @@
 
 import { normalizeHeader } from './columns';
 
+/** Takma adlar başlıkla aynı anahtardan geçer (İ/I/ı → i). */
+function aliasSet(names: readonly string[]): Set<string> {
+  return new Set(names.map((name) => normalizeHeader(name)));
+}
+
 export type FileKind =
   | 'rankmath'
   | 'redirection'
@@ -45,18 +50,18 @@ export interface SchemaDetection {
   notes: string[];
 }
 
-const RM_SOURCE = new Set(['source']);
-const RM_DEST = new Set(['destination']);
-const RM_MATCH = new Set(['matching']);
-const RM_TYPE = new Set(['type']);
+const RM_SOURCE = aliasSet(['source']);
+const RM_DEST = aliasSet(['destination']);
+const RM_MATCH = aliasSet(['matching']);
+const RM_TYPE = aliasSet(['type']);
 
-const RD_SOURCE = new Set(['source', 'sourceurl']);
-const RD_TARGET = new Set(['target', 'targeturl']);
-const RD_REGEX = new Set(['regex']);
-const RD_CODE = new Set(['code', 'httpcode']);
+const RD_SOURCE = aliasSet(['source', 'sourceurl']);
+const RD_TARGET = aliasSet(['target', 'targeturl']);
+const RD_REGEX = aliasSet(['regex']);
+const RD_CODE = aliasSet(['code', 'httpcode']);
 
-const PLAIN_SOURCE = new Set(['source', 'kaynak', 'from', 'eskiurl', 'oldurl']);
-const PLAIN_DEST = new Set([
+const PLAIN_SOURCE = aliasSet(['source', 'kaynak', 'from', 'eskiurl', 'oldurl']);
+const PLAIN_DEST = aliasSet([
   'destination',
   'target',
   'hedef',
@@ -65,7 +70,7 @@ const PLAIN_DEST = new Set([
   'newurl',
 ]);
 
-const GSC_PAGE = new Set([
+const GSC_PAGE = aliasSet([
   'toppages',
   'page',
   'landingpage',
@@ -77,8 +82,8 @@ const GSC_PAGE = new Set([
   'sayfa',
   'sayfalar',
 ]);
-const GSC_CLICKS = new Set(['clicks', 'tıklamalar', 'tiklamalar']);
-const GSC_IMPR = new Set(['impressions', 'gösterimler', 'gosterimler']);
+const GSC_CLICKS = aliasSet(['clicks', 'tıklamalar', 'tiklamalar']);
+const GSC_IMPR = aliasSet(['impressions', 'gösterimler', 'gosterimler']);
 
 function idx(headers: string[], aliases: Set<string>): number {
   for (let i = 0; i < headers.length; i++) {

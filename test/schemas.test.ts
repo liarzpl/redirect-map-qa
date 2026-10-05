@@ -59,6 +59,44 @@ describe('detectSchema', () => {
     expect(d.kind).toBe('gsc');
   });
 
+  it('English GSC export binds clicks and impressions', () => {
+    const d = detectSchema([
+      'Top pages',
+      'Clicks',
+      'Impressions',
+      'CTR',
+      'Position',
+    ]);
+    expect(d.kind).toBe('gsc');
+    expect(d.roles.page).toBe(0);
+    expect(d.roles.clicks).toBe(1);
+    expect(d.roles.impressions).toBe(2);
+  });
+
+  it('Turkish GSC export still binds clicks and impressions', () => {
+    const d = detectSchema([
+      'En çok ziyaret edilen sayfalar',
+      'Tıklamalar',
+      'Gösterimler',
+      'TO',
+      'Pozisyon',
+    ]);
+    expect(d.kind).toBe('gsc');
+    expect(d.roles.page).toBe(0);
+    expect(d.roles.clicks).toBe(1);
+    expect(d.roles.impressions).toBe(2);
+  });
+
+  it('dotted capital İ still matches impressions', () => {
+    const d = detectSchema(['Sayfa', 'Tıklamalar', 'GÖSTERİMLER']);
+    expect(d.kind).toBe('gsc');
+    expect(d.roles.clicks).toBe(1);
+    expect(d.roles.impressions).toBe(2);
+
+    const dottedEnglish = detectSchema(['Top pages', 'Clicks', 'İmpressions']);
+    expect(dottedEnglish.roles.impressions).toBe(2);
+  });
+
   it('bilinmeyen → unknown', () => {
     const d = detectSchema(['eski_yol', 'yeni_yol', 'kod']);
     expect(d.kind).toBe('unknown');
