@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
-import { CSP_POLICY } from './shared/csp.mjs';
+import { CSP_POLICY, EXTRA_SECURITY_HEADERS } from './shared/csp.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -33,6 +33,11 @@ function injectCspPlugin(): Plugin {
   };
 }
 
+const securityHeaders = {
+  'Content-Security-Policy': CSP_POLICY,
+  ...EXTRA_SECURITY_HEADERS,
+};
+
 export default defineConfig({
   base: './',
   define: {
@@ -49,14 +54,10 @@ export default defineConfig({
     },
   },
   server: {
-    headers: {
-      'Content-Security-Policy': CSP_POLICY,
-    },
+    headers: securityHeaders,
   },
   preview: {
-    headers: {
-      'Content-Security-Policy': CSP_POLICY,
-    },
+    headers: securityHeaders,
   },
   plugins: [injectCspPlugin(), generateSwPlugin()],
 });

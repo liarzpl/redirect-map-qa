@@ -11,4 +11,5 @@ export const EXTRA_SECURITY_HEADERS = {
   'X-Frame-Options': 'DENY',
   'Permissions-Policy':
     'interest-cohort=(), geolocation=(), microphone=(), camera=()',
+  'Cross-Origin-Opener-Policy': 'same-origin',
 };

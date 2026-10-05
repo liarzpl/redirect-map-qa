@@ -22,6 +22,10 @@
         {
           "key": "Permissions-Policy",
           "value": "interest-cohort=(), geolocation=(), microphone=(), camera=()"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
         }
       ]
     }
