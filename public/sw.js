@@ -1,6 +1,6 @@
 /* Service worker — yalnız statik dosyalar; veri göndermez. Otomatik üretildi. */
-/* CACHE_VERSION: 1.0.1 */
-const CACHE = "tarayici-arac-v1.0.1";
+/* CACHE_VERSION: 0.1.0 */
+const CACHE = "tarayici-arac-v0.1.0";
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

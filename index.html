@@ -11,10 +11,10 @@
     <meta name="theme-color" content="#1a2332" />
     <meta
       name="description"
-      content="İstemci tarafı Excel/CSV aracı — veriniz cihazınızdan çıkmaz."
+      content="Redirect Map QA — Rank Math + Redirection birleştirme ve denetim. Veri cihazınızda kalır."
     />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-    <title>Excel/CSV Araç Şablonu</title>
+    <title>Redirect Map QA</title>
   </head>
   <body>
     <main>
@@ -24,47 +24,110 @@
       </div>
 
       <header>
-        <h1 id="app-title">Excel/CSV Araç Şablonu</h1>
-        <p class="lead">
-          Dosyanız yalnız tarayıcınızda işlenir. Sunucu yok, analytics yok,
-          üçüncü parti istek yok.
+        <div class="header-row">
+          <h1 id="app-title">Redirect Map QA</h1>
+          <label class="lang-select">
+            <span class="visually-hidden">Dil</span>
+            <select id="lang-select" aria-label="Language">
+              <option value="tr" selected>TR</option>
+              <option value="en">EN</option>
+            </select>
+          </label>
+        </div>
+        <p class="lead" id="lead-text">
+          Rank Math, Redirection ve düz CSV dışa aktarımlarını tarayıcıda birleştirir.
+        </p>
+        <p class="privacy" id="privacy-note">
+          Veri cihazınızda kalır — sunucu yok, ağ isteği yok, analytics yok.
         </p>
         <p class="muted">
-          Zorunlu kolonlar (başlık adına göre):
-          <strong id="required-cols"></strong>
-          · <span id="xlsx-version" class="badge"></span>
+          <span id="xlsx-version" class="badge"></span>
         </p>
       </header>
 
       <section class="card" aria-labelledby="upload-heading">
-        <h2 id="upload-heading" class="visually-hidden">Dosya yükle</h2>
-        <label class="file-label">
-          Dosya seç (.xlsx / .xls / .csv)
+        <h2 id="upload-heading" class="card-title">Dosya yükle</h2>
+        <label class="file-label" id="upload-label">
+          Dosya seç (.xlsx / .xls / .csv, çoklu)
           <input
             id="file-input"
             type="file"
+            multiple
             accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
           />
         </label>
+        <div id="file-list" class="file-list"></div>
+        <div id="mapping-panel" class="mapping-panel" hidden>
+          <h3 class="card-subtitle" id="mapping-title">Sütun eşleme</h3>
+          <div id="mapping-forms"></div>
+        </div>
+        <fieldset class="options" id="norm-options">
+          <legend id="options-legend">Normalizasyon seçenekleri</legend>
+          <label
+            ><input type="checkbox" id="opt-path-case" />
+            <span id="lbl-path-case">Path büyük/küçük harf duyarsız</span></label
+          >
+          <label
+            ><input type="checkbox" id="opt-trail-slash" checked />
+            <span id="lbl-trail-slash">Sondaki / farkını yok say</span></label
+          >
+          <label
+            ><input type="checkbox" id="opt-ignore-query" />
+            <span id="lbl-ignore-query">Query string’i yok say</span></label
+          >
+        </fieldset>
         <div id="status" role="status" aria-live="polite"></div>
         <div class="actions">
-          <button type="button" id="btn-download-xlsx" class="primary" disabled>
-            Excel indir (kaçırılmış)
+          <button type="button" id="btn-run" class="primary" disabled>
+            Denetimi çalıştır
           </button>
-          <button type="button" id="btn-download-csv" disabled>
-            CSV indir (kaçırılmış)
+          <button type="button" id="btn-download-map" disabled>
+            Düzeltilmiş map CSV
+          </button>
+          <button type="button" id="btn-download-issues" disabled>
+            Sorun raporu CSV
           </button>
         </div>
       </section>
 
+      <section class="card" id="summary-wrap" hidden>
+        <h2 class="card-title">Özet</h2>
+        <div id="summary-counts" class="summary-counts"></div>
+      </section>
+
       <section class="card" id="preview-wrap" hidden>
-        <h2 class="card-title">Önizleme</h2>
+        <h2 class="card-title">Birleşik tablo</h2>
+        <div class="filter-row">
+          <label>
+            <span id="filters-label">Filtre</span>
+            <select id="flag-filter">
+              <option value="all">Tümü</option>
+              <option value="duplicate">duplicate</option>
+              <option value="conflict">conflict</option>
+              <option value="chain">chain</option>
+              <option value="loop">loop</option>
+              <option value="self">self</option>
+              <option value="unsupported">unsupported</option>
+              <option value="ok">ok (bayraksız)</option>
+              <option value="flatten">flatten önerisi var</option>
+            </select>
+          </label>
+          <label class="flatten-all">
+            <input type="checkbox" id="opt-select-all-flatten" />
+            <span id="lbl-flatten">Flatten önerilerini seç</span>
+          </label>
+        </div>
         <p id="preview-note" class="muted"></p>
         <div class="table-wrap">
           <table>
             <thead id="preview-head"></thead>
             <tbody id="preview-body"></tbody>
           </table>
+        </div>
+        <div class="pager">
+          <button type="button" id="btn-prev" disabled>←</button>
+          <span id="page-info"></span>
+          <button type="button" id="btn-next" disabled>→</button>
         </div>
       </section>
 
@@ -78,8 +141,10 @@
       </section>
 
       <footer class="muted site-footer">
-        MIT Lisans · Şablon — yeni projede <code>src/config.ts</code> ve demo
-        akışını özelleştirin.
+        <p>
+          Canlı HTTP kontrolü yok · Regex/wildcard desteklenmiyor (bayraklanır) ·
+          MIT · SheetJS 0.20.3
+        </p>
       </footer>
     </main>
     <script type="module" src="/src/main.ts"></script>

@@ -89,25 +89,18 @@ describe('parseWorkbookFile fixtures', () => {
   });
 
   it('satır sınırını aşan dosyayı reddeder', async () => {
-    // Dinamik büyük sayfa (fixture yoksa üretilmiş olmalı)
-    const bigPath = path.join(fixtures, 'buyuk-satir.xlsx');
-    if (!fs.existsSync(bigPath)) {
-      // test ortamında üret
-      const headers = ['Ürün Adı', 'Adet', 'Fiyat'];
-      const rows = Array.from({ length: MAX_ROWS + 10 }, (_, i) => [
-        `Urun ${i}`,
-        i,
-        1.5,
-      ]);
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Data');
-      const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
-      fs.writeFileSync(bigPath, buf);
+    // CSV ile eşik+1 satır (xlsx üretmek 100k satırda ağır)
+    const bigPath = path.join(fixtures, 'buyuk-satir.csv');
+    if (!fs.existsSync(bigPath) || fs.statSync(bigPath).size < 1000) {
+      const lines = ['Ürün Adı,Adet,Fiyat'];
+      for (let i = 0; i < MAX_ROWS + 5; i++) {
+        lines.push(`Urun ${i},${i},1.5`);
+      }
+      fs.writeFileSync(bigPath, lines.join('\n'), 'utf8');
     }
-    const file = fileFromFixture('buyuk-satir.xlsx');
+    const file = fileFromFixture('buyuk-satir.csv', 'text/csv');
     await expect(parseWorkbookFile(file)).rejects.toThrow(/satır/i);
-  });
+  }, 120_000);
 });
 
 describe('çıktı kaçırma entegrasyonu', () => {

@@ -23,10 +23,8 @@ export class FileParseError extends Error {
   }
 }
 
-/** Desteklenen uzantılar. */
 const ALLOWED_EXT = new Set(['.xlsx', '.xls', '.csv']);
 
-/** XLSX/XLS için ZIP veya OLE magic doğrulaması. */
 function assertWorkbookMagic(buffer: ArrayBuffer, ext: string): void {
   const bytes = new Uint8Array(buffer);
   if (ext === '.csv') return;
@@ -35,9 +33,7 @@ function assertWorkbookMagic(buffer: ArrayBuffer, ext: string): void {
       'Dosya açılamadı. Bozuk veya geçersiz bir Excel/CSV olabilir.',
     );
   }
-  // ZIP (xlsx/ods): PK
   const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b;
-  // OLE compound (xls): D0 CF 11 E0
   const isOle =
     bytes[0] === 0xd0 &&
     bytes[1] === 0xcf &&
@@ -85,10 +81,6 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/**
- * Dosyayı ArrayBuffer olarak okuyup ilk sayfayı ayrıştırır.
- * Kullanıcı verisi loglanmaz.
- */
 export async function parseWorkbookFile(file: File): Promise<ParsedSheet> {
   assertAllowedFile(file);
   logger.info('Dosya okunuyor');
@@ -100,7 +92,14 @@ export async function parseWorkbookFile(file: File): Promise<ParsedSheet> {
     throw new FileParseError('Dosya okunamadı. Yeniden seçip deneyin.');
   }
 
-  const ext = getExtension(file.name);
+  return parseWorkbookBuffer(buffer, file.name);
+}
+
+export function parseWorkbookBuffer(
+  buffer: ArrayBuffer,
+  filename: string,
+): ParsedSheet {
+  const ext = getExtension(filename);
   assertWorkbookMagic(buffer, ext);
 
   let workbook: XLSX.WorkBook;
@@ -109,7 +108,7 @@ export async function parseWorkbookFile(file: File): Promise<ParsedSheet> {
       type: 'array',
       cellDates: true,
       dense: false,
-      codepage: 65001, // UTF-8 (CSV Türkçe başlıklar)
+      codepage: 65001,
     });
   } catch {
     throw new FileParseError(
@@ -154,10 +153,6 @@ export async function parseWorkbookFile(file: File): Promise<ParsedSheet> {
   return { headers, rows, sheetName };
 }
 
-/**
- * Kaçırılmış hücrelerle XLSX veya CSV indirir.
- * bookType: 'xlsx' | 'csv'
- */
 export function downloadEscapedWorkbook(
   headers: string[],
   rows: SheetRow[],
@@ -183,9 +178,7 @@ export function downloadEscapedWorkbook(
   logger.info('Dosya indirildi');
 }
 
-/** SheetJS sürümünü doğrulamak için (test / README). */
 export function getXlsxVersion(): string {
-  // xlsx paketi version alanını export eder
   const v = (XLSX as unknown as { version?: string }).version;
   return v ?? 'bilinmiyor';
 }

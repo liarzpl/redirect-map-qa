@@ -1,0 +1,13 @@
+id,source,matching,destination,type,category,status,ignore
+1,/old-a,exact,/new-a,301,SEO,active,
+2,/old-b,exact,/new-b,301,SEO,active,
+3,/old-a,exact,/new-a,301,SEO,active,
+4,/conflict-x,exact,/dest-1,301,SEO,active,
+5,/conflict-x,exact,/dest-2,302,SEO,active,
+6,/chain-a,exact,/chain-b,301,SEO,active,
+7,/chain-b,exact,/chain-c,301,SEO,active,
+8,/loop-a,exact,/loop-b,301,SEO,active,
+9,/loop-b,exact,/loop-a,301,SEO,active,
+10,/self-page,exact,/self-page,301,SEO,active,
+11,/regex-.*-page,regex,/somewhere,301,SEO,active,
+12,https://example.com/AbsPath,exact,https://example.com/AbsDest,301,SEO,active,

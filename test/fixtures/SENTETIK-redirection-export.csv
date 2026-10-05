@@ -1,0 +1,9 @@
+source,target,regex,code,type,hits,title,status
+"/from-rd","/to-rd",0,301,"url",0,"","active"
+"/chain-c","/chain-final",0,301,"url",0,"","active"
+"/triple-a","/triple-b",0,301,"url",0,"","active"
+"/triple-b","/triple-c",0,301,"url",0,"","active"
+"/triple-c","/triple-a",0,301,"url",0,"","active"
+"/wild-*/page","/nope",0,301,"url",0,"","active"
+"/regex-rd",".*",1,301,"url",0,"","active"
+"/dup-shared","/same-dest",0,301,"url",0,"","active"

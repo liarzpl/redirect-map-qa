@@ -1,7 +1,7 @@
 {
-  "name": "Excel/CSV Araç Şablonu",
-  "short_name": "Excel Araç",
-  "description": "İstemci tarafı Excel/CSV aracı — veri cihazdan çıkmaz.",
+  "name": "Redirect Map QA",
+  "short_name": "Redirect QA",
+  "description": "Rank Math + Redirection birleştirme ve denetim — veri cihazdan çıkmaz.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0f1419",

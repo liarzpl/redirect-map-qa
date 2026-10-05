@@ -1,0 +1,3 @@
+source,destination
+/dup-shared,/same-dest
+/plain-only,/plain-target

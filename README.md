@@ -1,70 +1,153 @@
-# Tarayıcı Excel/CSV Araç Şablonu
+# Redirect Map QA
 
-İstemci tarafında çalışan, **veriyi cihazdan çıkarmayan** Excel/CSV araçları için yeniden kullanılabilir başlangıç şablonu. Vite + vanilla TypeScript. Türkçe arayüz.
+Rank Math Redirects, Redirection (John Godley) ve düz `source,destination` CSV/XLSX dışa aktarımlarını **tarayıcıda** birleştirir; yinelenen kaynak, çakışan hedef, zincir, döngü ve self-redirect bulur. Opsiyonel Google Search Console (GSC) Pages/Performance CSV ile tıklama önceliği ekler. Düzeltilmiş map CSV ve sorun raporu indirir.
 
-Belirli bir ürün fikri onaylandığında bu şablonu kopyalayıp 1–2 günde çalışan bir araç çıkarabilirsiniz.
+**Veri cihazınızda kalır.** Sunucu yok, OAuth yok, analytics yok, canlı HTTP/crawl yok.
+
+Lisans: MIT · Telif: liarzpl
 
 ## Hızlı başlangıç
 
-**Node.js:** `^22.12` veya üzeri (Vitest 5 / temiz `npm audit` için). `.nvmrc` = 22.20.0
+**Node.js:** `^22.12` (`.nvmrc` = 22.20.0)
 
 ```bash
-cd fikir-fabrikasi/sablon/tarayici-arac
+cd app   # veya repo kökü
 npm ci
 npm test
 npm run build
 npm run preview
 ```
 
-Geliştirme sunucusu: `npm run dev`
+Geliştirme: `npm run dev`
 
-Test fixture’larını yeniden üretmek: `npm run fixtures`
+## Desteklenen girdiler
 
-## Demo akışı
+Çoklu dosya yükleme (CSV / XLSX). Dosya türü başlıklardan tahmin edilir; kullanıcı değiştirebilir. Bilinmeyen export için sütun seçici (source / destination / type / regex / matching / GSC alanları).
 
-1. Dosya yükle (`.xlsx` / `.xls` / `.csv`)
-2. Zorunlu kolonları **başlık adına göre** eşle (ör. `Ürün Adı`, `Adet`, `Fiyat`)
-3. Eksik kolonları Türkçe hata olarak göster
-4. Önizleme tablosu (textContent — `innerHTML` yok)
-5. Formül kaçırması uygulanmış Excel/CSV indir
+### Rank Math Redirects CSV
 
-## Güvenlik kararları (kilitli)
+Kaynak: [How to Create & Edit Redirects Using CSV (Rank Math KB)](https://rankmath.com/kb/how-to-manage-redirects-via-csv/)
 
-1. **Tamamen istemci / statik site** — sunucu yok, analytics yok, üçüncü parti istek yok. Kullanıcı verisi hiçbir ağ isteğine girmez.
-2. **SheetJS 0.20.3** — npm’deki eski `xlsx@0.18.5` (CVE’li) **kullanılmaz**. Resmi dağıtım: `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`. Paket **build’e gömülür**; çalışma anında CDN’den script çekilmez.
-3. **Formül enjeksiyonu koruması** — baştaki boşluk/NBSP/Unicode boşluk atlanır; `= + - @ |` ve fullwidth `＝＋－＠` ile başlayan metinlerin başına `'` eklenir. Saf `number` hücreler (ör. `-12.5`) sayı kalır. **Metin** `"-5"` ise başına `'` eklenir.
-4. **Boyut / satır sınırı** — varsayılan 10 MB ve 50.000 satır (`src/config.ts`). Aşımda anlaşılır Türkçe hata. Bozuk/boş/yanlış uzantıda çökmez.
-5. **Kolon eşleme** — sıra değil başlık adı; Türkçe İ/ı, Ş/ş, boşluk, büyük-küçük harf normalizasyonu.
-6. **Sıkı CSP** — tek kaynak `shared/csp.mjs` (`style-src 'self'`, `font-src 'self'`, `worker-src 'self'`; `unsafe-inline` yok). `scripts/sync-csp.mjs` ile index.html / `_headers` / `netlify.toml` / `vercel.json` / Vite header hizalanır; `test/csp-align.test.ts` doğrular.
-7. **Yerel saklama ve PWA varsayılan KAPALI** (`LOCAL_STORAGE_ENABLED`, `PWA_ENABLED`). IndexedDB / persist / yedek hatırlatması; `localStorage`’a hassas veri yok. PWA açılınca sürümlü SW cache (`tarayici-arac-v{version}`), eski cache silme, «Yenile» ipucu.
-8. **Loglar** — konsola kullanıcı verisi yazılmaz (`src/lib/logger.ts`).
+Doğrulanmış sütunlar (başlıklar küçük harf, sırasız):
 
-## Yeni projede ne değiştirilir?
+| Sütun | Not |
+|-------|-----|
+| `id` | Düzenleme için |
+| `source` | Kaynak URL(ler) |
+| `matching` | `exact`, `contains`, `start`, `end`, `regex` |
+| `destination` | Hedef |
+| `type` | `301`, `302`, `307`, `410`, `451` |
+| `category` | Opsiyonel |
+| `status` | `active` / `inactive` |
+| `ignore` | boş veya `case` |
 
-| Dosya | Ne yapılır |
-|-------|------------|
-| `src/config.ts` | Uygulama adı, zorunlu kolonlar, boyut/satır sınırı, `LOCAL_STORAGE_ENABLED`, `PWA_ENABLED` |
-| `src/main.ts` | İş kuralları, dönüşüm, ek UI adımları |
-| `index.html` / `src/style.css` | Marka, metinler, düzen |
-| `public/manifest.webmanifest` | PWA adı / ikon |
-| `test/` | Yeni iş kuralları için birim testleri |
+`matching` ∈ {`regex`,`contains`,`start`,`end`} → satır **unsupported** (denetime girmez).
 
-Dokunulmaması gerekenler (güvenlik kilidi): formül kaçırma, SheetJS kaynağı/sürümü, CSP iskeleti, logger’a kullanıcı verisi koymama, build’e harici runtime CDN eklememe.
+### Redirection (John Godley) CSV
+
+Doküman (import biçimi): [Import and export – Redirection](https://redirection.me/support/import-export/)
+
+Export sütunları (kaynak kod `fileio/csv.php`, jsDelivr `johngodley/redirection@5.5.2`):
+
+| Sütun | Not |
+|-------|-----|
+| `source` | Kaynak |
+| `target` | Hedef (bizde destination rolü) |
+| `regex` | `0` / `1` |
+| `code` | HTTP kodu (301…) |
+| `type` | `url` / `error` |
+| `hits` | İstatistik |
+| `title` | Başlık |
+| `status` | `active` / `disabled` |
+
+Opsiyonel `group` sütunu: [PR #4201](https://github.com/johngodley/redirection/pull/4201) ile yeni sürümlerde görülebilir; tanıma için zorunlu değil.
+
+Dokümandaki import örneği başlıksız da olabilir (`source URL,target URL[,regex,http code,type]`). Başlıksız dosyalar **bilinmeyen** sayılır → sütun seçici.
+
+`regex=1` veya kaynakta `*` → **unsupported**.
+
+### Düz CSV
+
+`source,destination` (veya `kaynak`/`hedef`, `from`/`to`). Opsiyonel `type`.
+
+### GSC Pages / Performance (opsiyonel)
+
+| Rol | EN | TR |
+|-----|----|----|
+| Sayfa | `Top pages`, `Page`, `Landing page`, `URL` | `En çok ziyaret edilen sayfalar`, `Üst sayfalar`, `Sayfa` |
+| Tıklama | `Clicks` | `Tıklamalar` |
+| Gösterim | `Impressions` | `Gösterimler` |
+
+GSC sütun adları ürün diline göre değişebilir; tanınmazsa sütun seçici kullanın.
+
+### Doğrulanamayanlar
+
+- Redirection’ın **tüm** sürümlerinde export başlıklarının birebirliği (örnek canlı site export’u yok; 5.5.2 kaynak + PR #4201 ile doğrulandı).
+- Rank Math’in export’ta her zaman `matching` yazıp yazmadığı (KB import şeması doğrulandı; export’un aynı başlıkları ürettiği KB’de belirtiliyor).
+- GSC CSV’nin tüm dil/yerel başlık varyantları.
+
+## Normalizasyon kuralları
+
+Karşılaştırmadan önce:
+
+1. `trim`; **fragment** (`#…`) atılır  
+2. Tam URL → `host` (küçük harf) + `path` (+ query)  
+3. Göreli path → başına `/`  
+4. **Path** varsayılan **case-sensitive**; seçenekle duyarsız  
+5. **Host** her zaman case-insensitive  
+6. Sondaki `/` farkı varsayılan yok sayılır (kök `/` hariç); kapatılabilir  
+7. **Query** varsayılan korunur; yok sayılabilir  
+8. Yüzde kodlama path segment’lerinde normalize edilir  
+
+## Denetimler
+
+| Bayrak | Anlam |
+|--------|--------|
+| `duplicate` | Aynı source + aynı destination (dosyalar arası dahil) |
+| `conflict` | Aynı source, farklı destination |
+| `chain` | A→B ve B→C (uzunluk ≥ 2 hop); flatten önerisi |
+| `loop` | Döngü (2+); flatten **yok** |
+| `self` | source == destination (normalize sonrası) |
+| `unsupported` | Regex / wildcard / contains|start|end — denetime girmez |
+
+Her satırda kaynak **dosya adı** ve **satır no** korunur.
+
+**Flatten:** Zinciri son hedefe tek hop indiren öneri; kullanıcı onay kutusuyla seçmeden çıktıya yazılmaz. Döngülerde öneri yok.
+
+**GSC join:** `sourceNorm` ↔ `pageNorm`; sıralama: sorunlu + yüksek click önce.
+
+## Çıktı
+
+- Filtrelenebilir birleşik tablo (bayrak filtresi, özet sayaçlar, sayfalama)  
+- `redirect-map-fixed.csv` → `source,destination,type` (onaylı flatten uygulanır)  
+- `redirect-map-issues.csv` → sorunlu satırlar  
+- İndirmede **formula-guard** zorunlu (`= + - @ |` ve fullwidth)
+
+## Sınırlar
+
+- Dosya başı **10 MB**  
+- Dosya başı / birleşik **100.000** satır  
+- Ağır denetim **Web Worker** (`worker-src 'self'`)
+
+## Desteklenmeyenler
+
+- Canlı destination HTTP kontrolü / crawl  
+- Regex / wildcard kurallarının çözümü  
+- WordPress eklentisi / wp-admin  
+- Sunucu, OAuth, analytics  
+
+## Güvenlik
+
+- SheetJS **0.20.3** (cdn.sheetjs.com tgz); npm `xlsx@0.18.5` yok  
+- CSP tek kaynak `shared/csp.mjs` (`unsafe-inline` yok)  
+- `innerHTML` ile kullanıcı verisi yok  
+- PWA / yerel saklama varsayılan **kapalı**  
+- `fetch` / XHR / `sendBeacon` yok  
 
 ## Teknoloji
 
-- Vite 6 + TypeScript (React yok)
-- Vitest
-- SheetJS Community Edition **0.20.3** (vendor)
+Vite 6 + vanilla TypeScript + Vitest. Şablon: `fikir-fabrikasi/sablon/tarayici-arac` @ `cfb3815`.
 
-## Dağıtım
+## Gizlilik
 
-`npm run build` → `dist/`. Statik hosting (Vercel / Netlify / Cloudflare Pages / GitHub Pages). Header örnekleri repoda.
-
-## Dist kontrolü
-
-`dist/` içinde `http(s)://` geçen dizeler çoğunlukla SheetJS/OOXML **XML namespace** URI’leri ve telif notudur (`schemas.openxmlformats.org`, `www.w3.org`, `sheetjs.com` vb.). Çalışma anında CDN/analytics çağrısı yoktur; ağ istekleri CSP ile engellenir (`connect-src 'self'`).
-
-## Lisans
-
-MIT
+Tüm işlem tarayıcıda; dosyalar cihazdan çıkmaz.
