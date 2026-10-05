@@ -1,0 +1,29 @@
+/*
+ * redirect-map-qa — ürün override (v0.9 kararları, PR'da Doğukan onayına açık)
+ * Genel tokens.css değişmez. Bu dosya ondan sonra yüklenir.
+ * Yeni renk yok; şiddet rolleri mevcut success/warning/danger/muted token'larına bağlanır.
+ */
+
+:root {
+  /* Yoğun SEO tablosu: daha sıkı kart ve kontrol */
+  --card-pad: var(--space-4);          /* 20px → 16px */
+  --control-height: 2rem;              /* 36px → 32px */
+  --radius-lg: 8px;                    /* kartlar daha keskin, teknik his */
+  --content-max: 1120px;               /* geniş tablo; header/lead 65ch'de kalır */
+
+  /* Şiddet → genel rol eşlemesi */
+  --severity-error: var(--color-danger);
+  --severity-error-bg: var(--color-danger-subtle);
+  --severity-warning: var(--color-warning);
+  --severity-warning-bg: var(--color-warning-subtle);
+  --severity-notice: var(--color-muted);
+  --severity-notice-bg: var(--color-surface-2);
+  --severity-ok: var(--color-success);
+  --severity-ok-bg: var(--color-success-subtle);
+
+  /* Tablo */
+  --table-font: var(--text-sm);
+  --table-cell-y: var(--space-2);
+  --table-cell-x: var(--space-3);
+  --url-font: var(--font-mono);
+}
