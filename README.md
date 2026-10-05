@@ -4,6 +4,30 @@ Merge Rank Math, Redirection, and plain CSV/XLSX redirect maps **in the browser*
 
 **[Live demo](https://liarzpl.github.io/redirect-map-qa/)** · Privacy: files never leave the browser — no server, no OAuth, no analytics.
 
+Refreshed UI: light and dark themes, and a clearer results table.
+
+## Screenshots
+
+![Dark theme audit results](docs/screenshots/desktop-dark-results.png)
+
+Dark theme, audit results.
+
+![Light theme empty upload](docs/screenshots/desktop-light-empty.png)
+
+Light theme, empty upload.
+
+![Dark theme empty upload](docs/screenshots/desktop-dark-empty.png)
+
+Dark theme, empty upload.
+
+![Dark theme with a file loaded](docs/screenshots/desktop-dark-data.png)
+
+Dark theme, file loaded and audited.
+
+![Narrow dark audit results](docs/screenshots/narrow-dark-results.png)
+
+Narrow width, dark audit results.
+
 Rank Math Redirects, Redirection (John Godley) ve düz `source,destination` CSV/XLSX dışa aktarımlarını **tarayıcıda** birleştirir; yinelenen kaynak, çakışan hedef, zincir, döngü ve self-redirect bulur. Opsiyonel Google Search Console (GSC) Pages/Performance CSV ile tıklama önceliği ekler. Düzeltilmiş map CSV ve sorun raporu indirir.
 
 **Veri cihazınızda kalır.** Sunucu yok, OAuth yok, analytics yok, canlı HTTP/crawl yok.
