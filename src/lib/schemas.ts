@@ -198,7 +198,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
     };
   }
 
-  notes.push('Bilinmeyen şema — sütun seçici gerekli');
+  notes.push('Bilinmeyen şema: sütun seçici gerekli');
   return { kind: 'unknown', confidence: 'low', roles: {}, notes };
 }
 

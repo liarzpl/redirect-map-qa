@@ -8,10 +8,15 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; worker-src 'self'"
     />
-    <meta name="theme-color" content="#1a2332" />
+    <meta name="theme-color" content="#0e1116" />
+    <meta
+      name="theme-color"
+      content="#f7f8fa"
+      media="(prefers-color-scheme: light)"
+    />
     <meta
       name="description"
-      content="Redirect Map QA — Rank Math + Redirection birleştirme ve denetim. Veri cihazınızda kalır."
+      content="Redirect CSV yükle, döngü ve çakışma bul, düzeltilmiş haritayı indir. Veri cihazınızda kalır."
     />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <title>Redirect Map QA</title>
@@ -20,10 +25,10 @@
     <main>
       <div id="update-banner" class="update-banner" hidden>
         <span id="update-banner-text">Yeni sürüm hazır.</span>
-        <button type="button" id="btn-refresh" class="primary">Yenile</button>
+        <button type="button" id="btn-refresh">Yenile</button>
       </div>
 
-      <header>
+      <header class="site-header">
         <div class="header-row">
           <h1 id="app-title">Redirect Map QA</h1>
           <label class="lang-select">
@@ -35,101 +40,208 @@
           </label>
         </div>
         <p class="lead" id="lead-text">
-          Rank Math, Redirection ve düz CSV dışa aktarımlarını tarayıcıda birleştirir.
+          Redirect CSV yükle → döngü, çakışma ve zinciri bul → düzeltilmiş haritayı indir.
         </p>
-        <p class="privacy" id="privacy-note">
-          Veri cihazınızda kalır — sunucu yok, ağ isteği yok, analytics yok.
-        </p>
-        <p class="muted">
-          <span id="xlsx-version" class="badge"></span>
+        <p class="meta-line">
+          <span id="privacy-note"
+            >Veri cihazınızda kalır. Sunucu yok, ağ isteği yok, analytics yok.</span
+          >
+          <span class="meta-sep" aria-hidden="true">·</span>
+          <span id="xlsx-version"></span>
         </p>
       </header>
 
-      <section class="card" aria-labelledby="upload-heading">
-        <h2 id="upload-heading" class="card-title">Dosya yükle</h2>
-        <label class="file-label" id="upload-label">
-          Dosya seç (.xlsx / .xls / .csv, çoklu)
-          <input
-            id="file-input"
-            type="file"
-            multiple
-            accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
-          />
-        </label>
+      <section class="card" id="step-upload" aria-labelledby="upload-heading">
+        <h2 id="upload-heading" class="card-title">
+          <span id="upload-heading-text">Dosya yükle</span>
+        </h2>
+        <div class="dropzone" id="dropzone">
+          <p id="drop-hint">
+            Rank Math, Redirection veya düz CSV (source, destination). İsterseniz GSC.
+          </p>
+          <label class="file-btn" id="upload-label">
+            <span id="upload-btn-text">Dosya seç</span>
+            <input
+              id="file-input"
+              class="visually-hidden"
+              type="file"
+              multiple
+              accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+            />
+          </label>
+        </div>
+        <p id="empty-hint" class="empty-hint">CSV veya XLSX bırakın.</p>
         <div id="file-list" class="file-list"></div>
         <div id="mapping-panel" class="mapping-panel" hidden>
           <h3 class="card-subtitle" id="mapping-title">Sütun eşleme</h3>
           <div id="mapping-forms"></div>
         </div>
-        <fieldset class="options" id="norm-options">
-          <legend id="options-legend">Normalizasyon seçenekleri</legend>
-          <label
-            ><input type="checkbox" id="opt-path-case" />
-            <span id="lbl-path-case">Path büyük/küçük harf duyarsız</span></label
-          >
-          <label
-            ><input type="checkbox" id="opt-trail-slash" checked />
-            <span id="lbl-trail-slash">Sondaki / farkını yok say</span></label
-          >
-          <label
-            ><input type="checkbox" id="opt-ignore-query" />
-            <span id="lbl-ignore-query">Query string’i yok say</span></label
-          >
-        </fieldset>
-        <div id="status" role="status" aria-live="polite"></div>
+        <div id="preview-warnings"></div>
         <div class="actions">
-          <button type="button" id="btn-run" class="primary" disabled>
-            Denetimi çalıştır
-          </button>
-          <button type="button" id="btn-download-map" disabled>
-            Düzeltilmiş map CSV
-          </button>
-          <button type="button" id="btn-download-issues" disabled>
-            Sorun raporu CSV
-          </button>
+          <button type="button" id="btn-run" class="primary" disabled>Denetle</button>
+        </div>
+
+        <section id="step-preview" aria-labelledby="preview-heading" hidden>
+          <h2 id="preview-heading" class="visually-hidden">
+            <span id="step-preview-title">Önizleme</span>
+          </h2>
+          <details class="advanced" id="advanced">
+            <summary id="advanced-summary">Gelişmiş</summary>
+            <p id="preview-intro" class="hint">
+              Dosya başına ilk satırlar. Eşleşmeyen kolon ve boş satır burada uyarılır.
+            </p>
+            <div id="preview-samples"></div>
+
+            <fieldset class="options" id="norm-options">
+              <legend id="options-legend">Normalizasyon</legend>
+              <label>
+                <input type="checkbox" id="opt-path-case" />
+                <span id="lbl-path-case">Path büyük/küçük harf duyarsız</span>
+              </label>
+              <label>
+                <input type="checkbox" id="opt-trail-slash" checked />
+                <span id="lbl-trail-slash">Sondaki / farkını yok say</span>
+              </label>
+              <label>
+                <input type="checkbox" id="opt-ignore-query" />
+                <span id="lbl-ignore-query">Query string’i yok say</span>
+              </label>
+            </fieldset>
+
+            <!-- Duplicate politikası yalnız sunumdur; denetim bu değeri okumaz. -->
+            <fieldset class="dup-options">
+              <legend id="dup-legend">Duplicate politikası</legend>
+              <label>
+                <input type="radio" name="dup-policy" value="check" checked />
+                <span id="dup-check">Kontrol etme</span>
+              </label>
+              <label>
+                <input type="radio" name="dup-policy" value="ignore" />
+                <span id="dup-ignore">Yok say</span>
+              </label>
+              <label>
+                <input type="radio" name="dup-policy" value="update" />
+                <span id="dup-update">Güncelle</span>
+              </label>
+            </fieldset>
+            <p id="dup-note" class="hint">
+              Yalnız sunum. Denetim ve dışa aktarma aynı kalır.
+            </p>
+            <label class="check-line">
+              <input type="checkbox" id="opt-select-all-flatten" />
+              <span id="lbl-flatten">Flatten önerilerini seç</span>
+            </label>
+            <p id="flatten-help" class="hint">
+              Zincirleri son hedefe bağlar; loop içeren satırlara uygulanmaz.
+            </p>
+          </details>
+        </section>
+      </section>
+
+      <div id="status" role="status" aria-live="polite"></div>
+
+      <section class="card" id="summary-wrap" hidden aria-labelledby="results-heading">
+        <h2 id="results-heading" class="card-title">
+          <span id="step-results-title">Sonuç</span>
+        </h2>
+        <div id="summary-counts" class="metric-strip"></div>
+        <p id="severity-breakdown" class="breakdown"></p>
+
+        <div id="preview-wrap">
+          <div class="filter-bar">
+            <label class="field field-grow">
+              <span id="search-label">Ara</span>
+              <input
+                id="row-search"
+                type="search"
+                autocomplete="off"
+                placeholder="source / destination"
+              />
+            </label>
+          </div>
+
+          <details class="advanced" id="filter-details">
+            <summary id="filter-summary">Filtreler</summary>
+            <div class="filter-advanced">
+              <div class="field">
+                <span id="severity-label">Şiddet</span>
+                <div class="segment" role="radiogroup" aria-labelledby="severity-label">
+                  <label class="segment-opt">
+                    <input type="radio" name="severity" value="all" checked />
+                    <span data-sev-label="all">Tümü</span>
+                  </label>
+                  <label class="segment-opt">
+                    <input type="radio" name="severity" value="issues" />
+                    <span data-sev-label="issues">sorun</span>
+                  </label>
+                  <label class="segment-opt">
+                    <input type="radio" name="severity" value="error" />
+                    <span data-sev-label="error">error</span>
+                  </label>
+                  <label class="segment-opt">
+                    <input type="radio" name="severity" value="warning" />
+                    <span data-sev-label="warning">warning</span>
+                  </label>
+                  <label class="segment-opt">
+                    <input type="radio" name="severity" value="notice" />
+                    <span data-sev-label="notice">notice</span>
+                  </label>
+                  <label class="segment-opt">
+                    <input type="radio" name="severity" value="ok" />
+                    <span data-sev-label="ok">ok</span>
+                  </label>
+                </div>
+              </div>
+              <label class="field">
+                <span id="filters-label">Bayrak</span>
+                <select id="flag-filter">
+                  <option value="all">Tümü</option>
+                  <option value="duplicate">duplicate</option>
+                  <option value="conflict">conflict</option>
+                  <option value="chain">chain</option>
+                  <option value="loop">loop</option>
+                  <option value="self">self</option>
+                  <option value="unsupported">unsupported</option>
+                  <option value="ok">ok</option>
+                  <option value="flatten">flatten</option>
+                </select>
+              </label>
+              <label class="field">
+                <span id="type-label">type</span>
+                <select id="type-filter">
+                  <option value="all">Tümü</option>
+                </select>
+              </label>
+            </div>
+          </details>
+
+          <p id="preview-note" class="hint" aria-live="polite"></p>
+          <div class="table-wrap">
+            <table>
+              <thead id="preview-head"></thead>
+              <tbody id="preview-body"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <button type="button" id="btn-prev" disabled>Önceki</button>
+            <span id="page-info"></span>
+            <button type="button" id="btn-next" disabled>Sonraki</button>
+          </div>
+          <div class="actions">
+            <button type="button" id="btn-download-issues" disabled>
+              CSV indir: bulgular
+            </button>
+            <button type="button" id="btn-download-map" disabled>
+              CSV indir: düzeltilmiş harita
+            </button>
+          </div>
         </div>
       </section>
 
-      <section class="card" id="summary-wrap" hidden>
-        <h2 class="card-title">Özet</h2>
-        <div id="summary-counts" class="summary-counts"></div>
-      </section>
-
-      <section class="card" id="preview-wrap" hidden>
-        <h2 class="card-title">Birleşik tablo</h2>
-        <div class="filter-row">
-          <label>
-            <span id="filters-label">Filtre</span>
-            <select id="flag-filter">
-              <option value="all">Tümü</option>
-              <option value="duplicate">duplicate</option>
-              <option value="conflict">conflict</option>
-              <option value="chain">chain</option>
-              <option value="loop">loop</option>
-              <option value="self">self</option>
-              <option value="unsupported">unsupported</option>
-              <option value="ok">ok (bayraksız)</option>
-              <option value="flatten">flatten önerisi var</option>
-            </select>
-          </label>
-          <label class="flatten-all">
-            <input type="checkbox" id="opt-select-all-flatten" />
-            <span id="lbl-flatten">Flatten önerilerini seç</span>
-          </label>
-        </div>
-        <p id="preview-note" class="muted"></p>
-        <div class="table-wrap">
-          <table>
-            <thead id="preview-head"></thead>
-            <tbody id="preview-body"></tbody>
-          </table>
-        </div>
-        <div class="pager">
-          <button type="button" id="btn-prev" disabled>←</button>
-          <span id="page-info"></span>
-          <button type="button" id="btn-next" disabled>→</button>
-        </div>
-      </section>
+      <details class="advanced help-panel" id="help-details">
+        <summary id="help-summary">Status kodları ve bayraklar</summary>
+        <div id="help-body"></div>
+      </details>
 
       <section class="card" id="storage-panel" hidden>
         <h2 class="card-title">Yerel saklama</h2>
@@ -137,7 +249,7 @@
 
       <section class="card" id="pwa-panel" hidden>
         <h2 class="card-title">Ana ekrana ekle (PWA)</h2>
-        <p id="install-hint" class="muted"></p>
+        <p id="install-hint" class="hint"></p>
       </section>
 
       <footer class="muted site-footer">
