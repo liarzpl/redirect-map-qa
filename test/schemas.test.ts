@@ -102,9 +102,6 @@ describe('detectSchema', () => {
 
       const { detectSchema: detect } = await import('../src/lib/schemas');
       const { listUnmatchedColumns } = await import('../src/lib/columns');
-      const { t } = await import('../src/lib/i18n');
-      const unmatchedLabel = t('en', 'unmatched');
-      expect(unmatchedLabel).toBe('Unmatched column');
 
       const rows = [
         'Top pages,Clicks,Impressions,CTR,Position',
@@ -115,14 +112,7 @@ describe('detectSchema', () => {
         const detected = detect(headers);
         expect(detected.kind).toBe('gsc');
         expect(detected.roles.impressions).toBe(2);
-        const impressionHeader = headers[2];
-        const unmatched = listUnmatchedColumns(headers);
-        expect(unmatched).not.toContain(impressionHeader);
-        const warning = unmatched.length
-          ? `${unmatchedLabel}: ${unmatched.join(', ')}`
-          : '';
-        expect(warning).not.toContain(impressionHeader ?? '');
-        expect(warning).not.toMatch(/Unmatched column:[^\n]*(Impressions|Gösterimler)/);
+        expect(listUnmatchedColumns(headers)).toEqual([]);
       }
     } finally {
       String.prototype.toLocaleLowerCase = original;

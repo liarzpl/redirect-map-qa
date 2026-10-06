@@ -85,6 +85,13 @@ const KNOWN_HEADER_NAMES = [
   'tıklamalar',
   'gosterimler',
   'gösterimler',
+  'ctr',
+  'position',
+  'pozisyon',
+  'tiklamaorani',
+  'tıklamaoranı',
+  'averageposition',
+  'ortalamapozisyon',
 ] as const;
 
 /**
