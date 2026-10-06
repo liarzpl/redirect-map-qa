@@ -4,3 +4,4 @@
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
   Permissions-Policy: interest-cohort=(), geolocation=(), microphone=(), camera=()
+  Cross-Origin-Opener-Policy: same-origin
