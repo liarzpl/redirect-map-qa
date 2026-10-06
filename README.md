@@ -10,6 +10,8 @@ Merge Rank Math, Redirection, and plain `source,destination` CSV/XLSX exports **
 
 License: MIT. Copyright: liarzpl.
 
+Version 0.2.1. The page shows this version from package.json at build time.
+
 The UI has light and dark themes, and a clearer results table.
 
 ## Screenshots
@@ -40,7 +42,7 @@ Narrow width, dark audit results.
 
 [https://liarzpl.github.io/redirect-map-qa/](https://liarzpl.github.io/redirect-map-qa/)
 
-The demo opens in Turkish. Choose **EN** in the language menu for this English interface.
+The demo opens in Turkish when the browser language is Turkish. Otherwise it opens in English. The language menu still switches between TR and EN, and that choice is remembered in this browser.
 
 **Node.js:** `^22.12` (`.nvmrc` is 22.20.0)
 
@@ -176,7 +178,7 @@ Each row keeps its source **file name** and **line number**.
 - SheetJS **0.20.3** from the cdn.sheetjs.com tarball. npm `xlsx@0.18.5` is not used.
 - CSP comes from one source, `shared/csp.mjs` (no `unsafe-inline`).
 - User data is not inserted with `innerHTML`.
-- PWA and local storage are **off** by default.
+- PWA and saving files on the device (IndexedDB) are off by default. The only thing the app stores is your TR/EN language choice, in this browser's localStorage. File contents and URLs are never stored.
 - No `fetch`, XHR, or `sendBeacon`.
 
 ## Technology

@@ -21,6 +21,13 @@ import { FileParseError, getXlsxVersion, parseWorkbookFile } from './lib/excel';
 import { downloadFixedMapCsv, downloadIssuesCsv } from './lib/export-csv';
 import { joinGsc, sortByPriority } from './lib/gsc';
 import { helpCodes, helpFlags, helpSeverities, t, type Lang, type MessageKey } from './lib/i18n';
+import {
+  isLang,
+  readStoredLang,
+  resolveInitialLang,
+  writeStoredLang,
+  type LangStore,
+} from './lib/locale';
 import { logger } from './lib/logger';
 import type { NormalizeOptions } from './lib/normalize';
 import {
@@ -63,7 +70,7 @@ const PREVIEW_N = 8;
 const REDIRECT_CODES = new Set(['301', '302', '303', '304', '307']);
 const IGNORE_ON = new Set(['1', 'yes', 'true', 'ignore', 'on']);
 
-let lang: Lang = 'tr';
+let lang: Lang = 'en';
 let uploads: UploadState[] = [];
 let records: RedirectRecord[] = [];
 let summary: AuditSummary | null = null;
@@ -197,6 +204,7 @@ function applyI18n(): void {
   $('btn-next').textContent = t(lang, 'next');
   $('footer-note').textContent = t(lang, 'footer');
   $('lang-label').textContent = t(lang, 'langLabel');
+  ($('lang-select') as HTMLSelectElement).value = lang;
   $('update-banner-text').textContent = t(lang, 'updateReady');
   $('btn-refresh').textContent = t(lang, 'refresh');
   $('storage-heading').textContent = t(lang, 'storageHeading');
@@ -1082,13 +1090,32 @@ function bindDropzone(): void {
   });
 }
 
+function langStore(): LangStore {
+  return {
+    get: (key) => localStorage.getItem(key),
+    set: (key, value) => {
+      localStorage.setItem(key, value);
+    },
+  };
+}
+
+function preferredLanguages(): readonly string[] {
+  const list = navigator.languages;
+  if (list && list.length > 0) return list;
+  return navigator.language ? [navigator.language] : [];
+}
+
 function init(): void {
+  lang = resolveInitialLang(readStoredLang(langStore()), preferredLanguages());
   document.title = APP_NAME;
   applyI18n();
   $('xlsx-version').textContent = `SheetJS ${getXlsxVersion()} · v${APP_VERSION}`;
 
   ($('lang-select') as HTMLSelectElement).addEventListener('change', (event) => {
-    lang = (event.target as HTMLSelectElement).value as Lang;
+    const next = (event.target as HTMLSelectElement).value;
+    if (!isLang(next)) return;
+    lang = next;
+    writeStoredLang(langStore(), lang);
     applyI18n();
     renderFileList();
     renderSummary();
