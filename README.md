@@ -8,7 +8,7 @@ Merge Rank Math, Redirection, and plain `source,destination` CSV/XLSX exports **
 
 **Your data stays on your device.** No server, no OAuth, no analytics, and no live HTTP check or crawl.
 
-License: MIT. Copyright: liarzpl.
+License: [MIT](LICENSE). Copyright: liarzpl.
 
 Version 0.2.1. The page shows this version from package.json at build time.
 
