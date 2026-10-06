@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { detectSchema, isUnsupportedRule } from '../src/lib/schemas';
 
 describe('detectSchema', () => {
@@ -85,6 +85,49 @@ describe('detectSchema', () => {
     expect(d.roles.page).toBe(0);
     expect(d.roles.clicks).toBe(1);
     expect(d.roles.impressions).toBe(2);
+  });
+
+  it('English and Turkish GSC headers map Impressions under tr-TR with no Unmatched column warning', async () => {
+    const original = String.prototype.toLocaleLowerCase;
+    String.prototype.toLocaleLowerCase = function (
+      this: string,
+      locales?: Intl.LocalesArgument,
+    ): string {
+      return original.call(this, locales ?? 'tr-TR');
+    };
+    vi.resetModules();
+    try {
+      // Runtime default locale is Turkish: bare toLocaleLowerCase("I") → "ı".
+      expect('Impressions'.toLocaleLowerCase()).toBe('ımpressions');
+
+      const { detectSchema: detect } = await import('../src/lib/schemas');
+      const { listUnmatchedColumns } = await import('../src/lib/columns');
+      const { t } = await import('../src/lib/i18n');
+      const unmatchedLabel = t('en', 'unmatched');
+      expect(unmatchedLabel).toBe('Unmatched column');
+
+      const rows = [
+        'Top pages,Clicks,Impressions,CTR,Position',
+        'En çok ziyaret edilen sayfalar,Tıklamalar,Gösterimler,TO,Pozisyon',
+      ];
+      for (const line of rows) {
+        const headers = line.split(',');
+        const detected = detect(headers);
+        expect(detected.kind).toBe('gsc');
+        expect(detected.roles.impressions).toBe(2);
+        const impressionHeader = headers[2];
+        const unmatched = listUnmatchedColumns(headers);
+        expect(unmatched).not.toContain(impressionHeader);
+        const warning = unmatched.length
+          ? `${unmatchedLabel}: ${unmatched.join(', ')}`
+          : '';
+        expect(warning).not.toContain(impressionHeader ?? '');
+        expect(warning).not.toMatch(/Unmatched column:[^\n]*(Impressions|Gösterimler)/);
+      }
+    } finally {
+      String.prototype.toLocaleLowerCase = original;
+      vi.resetModules();
+    }
   });
 
   it('dotted capital İ still matches impressions', () => {

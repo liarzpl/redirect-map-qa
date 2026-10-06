@@ -43,6 +43,62 @@ export function normalizeHeader(header: string): string {
     .replace(/\s/g, ''); // karşılaştırma için boşluksuz
 }
 
+/** Preview'da "Unmatched column" sayılmayan başlıklar. Anahtarlar normalizeHeader'dan geçer. */
+const KNOWN_HEADER_NAMES = [
+  'id',
+  'category',
+  'status',
+  'ignore',
+  'hits',
+  'title',
+  'group',
+  'source',
+  'destination',
+  'target',
+  'sourceurl',
+  'targeturl',
+  'matching',
+  'type',
+  'regex',
+  'code',
+  'httpcode',
+  'page',
+  'toppages',
+  'landingpage',
+  'url',
+  'clicks',
+  'impressions',
+  'kaynak',
+  'hedef',
+  'from',
+  'to',
+  'eskiurl',
+  'oldurl',
+  'yeniurl',
+  'newurl',
+  'sayfa',
+  'sayfalar',
+  'ustsayfalar',
+  'encokziyaretedilensayfalar',
+  'ençokziyaretedilensayfalar',
+  'tiklamalar',
+  'tıklamalar',
+  'gosterimler',
+  'gösterimler',
+] as const;
+
+/**
+ * Tanınmayan başlıklar. Preview bunları "Unmatched column" diye işaretler.
+ * Küme her çağrıda kurulur; başlık anahtarı locale'e bağlı kalmasın.
+ */
+export function listUnmatchedColumns(headers: readonly string[]): string[] {
+  const known = new Set(KNOWN_HEADER_NAMES.map((name) => normalizeHeader(name)));
+  return headers.filter((header) => {
+    const name = normalizeHeader(header ?? '');
+    return name.length > 0 && !known.has(name);
+  });
+}
+
 /**
  * Dosyadaki başlıklar ile beklenen kolonları eşleştirir.
  * @returns matched: beklenen → dosya başlık indeksi (veya -1)
