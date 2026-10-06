@@ -183,6 +183,14 @@ export function parseWorkbookBuffer(
   return { headers, rows, sheetName };
 }
 
+/** İndirilen ad. Mevcut xls/xlsx/csv uzantısı bir kez düşer, sonra bookType eklenir. */
+export function workbookDownloadName(
+  filename: string,
+  bookType: 'xlsx' | 'csv',
+): string {
+  return `${filename.replace(/\.(xlsx?|csv)$/i, '')}.${bookType}`;
+}
+
 export function downloadEscapedWorkbook(
   headers: string[],
   rows: SheetRow[],
@@ -199,10 +207,7 @@ export function downloadEscapedWorkbook(
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, 'Sonuc');
 
-  const outName =
-    bookType === 'csv'
-      ? filename.replace(/\.xlsx?$/i, '') + '.csv'
-      : filename.replace(/\.csv$/i, '') + '.xlsx';
+  const outName = workbookDownloadName(filename, bookType);
 
   XLSX.writeFile(wb, outName, { bookType, compression: true });
   logger.info('Dosya indirildi');

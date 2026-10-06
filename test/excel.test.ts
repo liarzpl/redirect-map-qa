@@ -11,6 +11,7 @@ import {
   getExtension,
   getXlsxVersion,
   parseWorkbookFile,
+  workbookDownloadName,
 } from '../src/lib/excel';
 import { escapeFormulaCell } from '../src/lib/formula-guard';
 
@@ -55,6 +56,23 @@ describe('assertAllowedFile / uzantı', () => {
   it('uzantı yardımcısı', () => {
     expect(getExtension('a.XLSX')).toBe('.xlsx');
     expect(getExtension('a')).toBe('');
+  });
+});
+
+describe('workbookDownloadName', () => {
+  it('csv adına ikinci .csv eklemez', () => {
+    expect(workbookDownloadName('redirect-map-fixed.csv', 'csv')).toBe(
+      'redirect-map-fixed.csv',
+    );
+    expect(workbookDownloadName('redirect-map-issues.csv', 'csv')).toBe(
+      'redirect-map-issues.csv',
+    );
+  });
+
+  it('xls ve xlsx uzantısını da değiştirir', () => {
+    expect(workbookDownloadName('report.xlsx', 'csv')).toBe('report.csv');
+    expect(workbookDownloadName('report.xls', 'csv')).toBe('report.csv');
+    expect(workbookDownloadName('report.CSV', 'xlsx')).toBe('report.xlsx');
   });
 });
 
