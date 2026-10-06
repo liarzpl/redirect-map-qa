@@ -178,7 +178,7 @@ Her satırda kaynak **dosya adı** ve **satır no** korunur.
 - SheetJS **0.20.3** (cdn.sheetjs.com tgz). npm `xlsx@0.18.5` kullanılmaz.
 - CSP tek kaynak `shared/csp.mjs` (`unsafe-inline` yok).
 - Kullanıcı verisi `innerHTML` ile basılmaz.
-- PWA ve yerel saklama varsayılan olarak **kapalı**.
+- PWA ve dosyaları cihazda saklama (IndexedDB) varsayılan olarak kapalı. Uygulamanın sakladığı tek şey TR/EN dil seçiminizdir; bu tarayıcının localStorage alanında tutulur. Dosya içerikleri ve URL'ler saklanmaz.
 - `fetch`, XHR ve `sendBeacon` yok.
 
 ## Teknoloji

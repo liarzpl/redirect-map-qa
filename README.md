@@ -178,7 +178,7 @@ Each row keeps its source **file name** and **line number**.
 - SheetJS **0.20.3** from the cdn.sheetjs.com tarball. npm `xlsx@0.18.5` is not used.
 - CSP comes from one source, `shared/csp.mjs` (no `unsafe-inline`).
 - User data is not inserted with `innerHTML`.
-- PWA and local storage are **off** by default.
+- PWA and saving files on the device (IndexedDB) are off by default. The only thing the app stores is your TR/EN language choice, in this browser's localStorage. File contents and URLs are never stored.
 - No `fetch`, XHR, or `sendBeacon`.
 
 ## Technology
