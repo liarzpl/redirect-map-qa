@@ -119,9 +119,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
         matching: rmMatch,
         type: idx(headers, RM_TYPE) >= 0 ? idx(headers, RM_TYPE) : undefined,
       },
-      notes: [
-        'Rank Math CSV: id, source, matching, destination, type, category, status, ignore',
-      ],
+      notes: ['noteRankMath'],
     };
   }
   // Rank Math zayıf: source+destination ve 'category' veya 'ignore' var, target yok
@@ -140,7 +138,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
           matching: rmMatch >= 0 ? rmMatch : undefined,
           type: idx(headers, RM_TYPE) >= 0 ? idx(headers, RM_TYPE) : undefined,
         },
-        notes: ['Rank Math benzeri (matching yok veya eksik)'],
+        notes: ['noteRankMathWeak'],
       };
     }
   }
@@ -164,9 +162,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
         regex: rdRegex >= 0 ? rdRegex : undefined,
         type: rdCode >= 0 ? rdCode : idx(headers, RM_TYPE) >= 0 ? idx(headers, RM_TYPE) : undefined,
       },
-      notes: [
-        'Redirection CSV: source, target, regex, code, type, hits, title, status (+opsiyonel group)',
-      ],
+      notes: ['noteRedirection'],
     };
   }
 
@@ -183,7 +179,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
         clicks: gscClicks >= 0 ? gscClicks : undefined,
         impressions: gscImpr >= 0 ? gscImpr : undefined,
       },
-      notes: ['GSC Pages/Performance CSV'],
+      notes: ['noteGsc'],
     };
   }
 
@@ -199,11 +195,11 @@ export function detectSchema(headers: string[]): SchemaDetection {
         destination: pDst,
         type: idx(headers, RM_TYPE) >= 0 ? idx(headers, RM_TYPE) : undefined,
       },
-      notes: ['Düz source,destination CSV'],
+      notes: ['notePlain'],
     };
   }
 
-  notes.push('Bilinmeyen şema: sütun seçici gerekli');
+  notes.push('noteUnknown');
   return { kind: 'unknown', confidence: 'low', roles: {}, notes };
 }
 

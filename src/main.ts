@@ -20,7 +20,7 @@ import { normalizeHeader } from './lib/columns';
 import { FileParseError, getXlsxVersion, parseWorkbookFile } from './lib/excel';
 import { downloadFixedMapCsv, downloadIssuesCsv } from './lib/export-csv';
 import { joinGsc, sortByPriority } from './lib/gsc';
-import { helpCodes, helpFlags, helpSeverities, t, type Lang } from './lib/i18n';
+import { helpCodes, helpFlags, helpSeverities, t, type Lang, type MessageKey } from './lib/i18n';
 import { logger } from './lib/logger';
 import type { NormalizeOptions } from './lib/normalize';
 import {
@@ -135,6 +135,47 @@ function setStatus(message: string, kind: 'info' | 'error' | 'ok' = 'info'): voi
   el.dataset.kind = kind;
 }
 
+function columnLabel(index: number): string {
+  return `(${t(lang, 'columnWord')} ${index})`;
+}
+
+function fileErrorText(err: FileParseError): string {
+  const count = err.vars.count ? fmt(Number(err.vars.count)) : '';
+  const max = err.vars.max ? fmt(Number(err.vars.max)) : '';
+  switch (err.code) {
+    case 'unreadable':
+      return t(lang, 'errUnreadable');
+    case 'notXlsx':
+      return t(lang, 'errNotXlsx');
+    case 'notXls':
+      return t(lang, 'errNotXls');
+    case 'empty':
+      return t(lang, 'errEmpty');
+    case 'tooBig':
+      return `${t(lang, 'errTooBig')} (${err.vars.size ?? ''}). ${t(lang, 'errTooBigMax')} ${err.vars.mb ?? ''} MB.`;
+    case 'badExt': {
+      const ext = err.vars.ext ? err.vars.ext : `(${t(lang, 'mappingNone')})`;
+      return `${t(lang, 'errBadExt')}: ${ext}. ${t(lang, 'errBadExtHint')}`;
+    }
+    case 'readFailed':
+      return t(lang, 'errReadFailed');
+    case 'noSheet':
+      return t(lang, 'errNoSheet');
+    case 'sheetUnreadable':
+      return t(lang, 'errSheet');
+    case 'noHeader':
+      return t(lang, 'errNoHeader');
+    case 'emptyHeader':
+      return t(lang, 'errEmptyHeader');
+    case 'tooManyRows':
+      return `${t(lang, 'errTooManyRows')}: ${count} > ${max}.`;
+    case 'combined':
+      return `${t(lang, 'errCombined')}: ${count} > ${max}.`;
+    default:
+      return err.message;
+  }
+}
+
 function normOptions(): NormalizeOptions {
   return {
     pathCaseInsensitive: ($('opt-path-case') as HTMLInputElement).checked,
@@ -198,6 +239,13 @@ function applyI18n(): void {
   ($('row-search') as HTMLInputElement).placeholder = t(lang, 'searchPlaceholder');
   $('btn-prev').textContent = t(lang, 'prev');
   $('btn-next').textContent = t(lang, 'next');
+  $('footer-note').textContent = t(lang, 'footer');
+  $('lang-label').textContent = t(lang, 'langLabel');
+  $('update-banner-text').textContent = t(lang, 'updateReady');
+  $('btn-refresh').textContent = t(lang, 'refresh');
+  $('storage-heading').textContent = t(lang, 'storageHeading');
+  $('pwa-heading').textContent = t(lang, 'pwaHeading');
+  $('install-hint').textContent = `${t(lang, 'versionLabel')} ${APP_VERSION}. ${t(lang, 'installPrivacy')}`;
 
   document.querySelectorAll<HTMLElement>('[data-sev-label]').forEach((el) => {
     if (el.dataset.sevLabel === 'all') el.textContent = t(lang, 'all');
@@ -310,7 +358,7 @@ function renderFileList(): void {
     if (upload.notes.length) {
       const note = document.createElement('div');
       note.className = 'file-note';
-      note.textContent = upload.notes.join(' · ');
+      note.textContent = upload.notes.map((id) => t(lang, id as MessageKey)).join(' · ');
       info.append(note);
     }
 
@@ -377,12 +425,12 @@ function renderMapping(): void {
       const sel = document.createElement('select');
       const empty = document.createElement('option');
       empty.value = '';
-      empty.textContent = 'yok';
+      empty.textContent = t(lang, 'mappingNone');
       sel.append(empty);
       upload.headers.forEach((header, index) => {
         const opt = document.createElement('option');
         opt.value = String(index);
-        opt.textContent = header || `(kolon ${index})`;
+        opt.textContent = header || columnLabel(index);
         if (upload.roles[field.key] === index) opt.selected = true;
         sel.append(opt);
       });
@@ -487,7 +535,7 @@ function renderPreview(): void {
     const hr = document.createElement('tr');
     upload.headers.forEach((header, index) => {
       const th = document.createElement('th');
-      th.textContent = header || `(kolon ${index})`;
+      th.textContent = header || columnLabel(index);
       hr.append(th);
     });
     thead.append(hr);
@@ -527,7 +575,7 @@ async function onFilesSelected(fileList: FileList): Promise<void> {
     renderFileList();
     setStatus(`${fmt(uploads.length)} ${t(lang, 'filesLoaded')}`, 'ok');
   } catch (err) {
-    const msg = err instanceof FileParseError ? err.message : t(lang, 'unexpected');
+    const msg = err instanceof FileParseError ? fileErrorText(err) : t(lang, 'unexpected');
     setStatus(msg, 'error');
     logger.error('Dosya işleme hatası');
   }
@@ -564,6 +612,8 @@ function collectRecords(): { redirects: RedirectRecord[]; gsc: GscRecord[] } {
   if (redirects.length > MAX_COMBINED_ROWS) {
     throw new FileParseError(
       `Birleşik satır sınırı aşıldı: ${fmt(redirects.length)} > ${fmt(MAX_COMBINED_ROWS)}.`,
+      'combined',
+      { count: String(redirects.length), max: String(MAX_COMBINED_ROWS) },
     );
   }
 
@@ -680,7 +730,7 @@ async function onRunAudit(): Promise<void> {
     ($('btn-download-issues') as HTMLButtonElement).disabled = false;
     setStatus(`${t(lang, 'done')} ${fmt(records.length)} ${t(lang, 'rowsWord')}.`, 'ok');
   } catch (err) {
-    const msg = err instanceof FileParseError ? err.message : t(lang, 'auditFailed');
+    const msg = err instanceof FileParseError ? fileErrorText(err) : t(lang, 'auditFailed');
     setStatus(msg, 'error');
     logger.error('Denetim hatası');
   } finally {
@@ -898,7 +948,7 @@ function renderTable(): void {
     thCell('flatten→'),
   );
   if (showClicks) hr.append(thCell('clicks', 'num'));
-  hr.append(thCell('file'), thCell('satır', 'num'));
+  hr.append(thCell('file'), thCell(t(lang, 'colLine'), 'num'));
   thead.append(hr);
 
   const list = filteredRecords();
@@ -1004,8 +1054,7 @@ function renderTable(): void {
 
 function showUpdateBanner(): void {
   const banner = $('update-banner');
-  $('update-banner-text').textContent =
-    'Yeni sürüm hazır. Güncellemek için Yenile’ye basın.';
+  $('update-banner-text').textContent = t(lang, 'updateReady');
   banner.hidden = false;
 }
 
@@ -1058,7 +1107,7 @@ function setupPwaUi(): void {
   link.rel = 'manifest';
   link.href = './manifest.webmanifest';
   document.head.appendChild(link);
-  $('install-hint').textContent = `Sürüm ${APP_VERSION}. Veri sunucuya gitmez.`;
+  $('install-hint').textContent = `${t(lang, 'versionLabel')} ${APP_VERSION}. ${t(lang, 'installPrivacy')}`;
 }
 
 function bindDropzone(): void {
@@ -1092,6 +1141,15 @@ function init(): void {
     renderSummary();
     if (records.length) fillTypeFilter();
     renderTable();
+    if (isStorageEnabled()) {
+      mountStoragePanel(
+        $('storage-panel'),
+        async () => {
+          downloadFixedMapCsv(records);
+        },
+        lang,
+      );
+    }
   });
 
   const input = $('file-input') as HTMLInputElement;
@@ -1165,7 +1223,7 @@ function init(): void {
   if (isStorageEnabled()) {
     mountStoragePanel(storagePanel, async () => {
       downloadFixedMapCsv(records);
-    });
+    }, lang);
   } else {
     storagePanel.hidden = true;
   }
