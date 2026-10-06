@@ -10,6 +10,8 @@ Rank Math, Redirection ve düz `source,destination` CSV/XLSX dışa aktarımlar�
 
 Lisans: MIT. Telif: liarzpl.
 
+Sürüm 0.2.1. Sayfa bu sürümü derleme sırasında package.json dosyasından gösterir.
+
 Arayüzde açık ve koyu tema ile daha okunaklı bir sonuç tablosu vardır.
 
 ## Ekran görüntüleri
@@ -40,7 +42,7 @@ Dar genişlik, koyu tema denetim sonuçları.
 
 [https://liarzpl.github.io/redirect-map-qa/](https://liarzpl.github.io/redirect-map-qa/)
 
-Demo Türkçe açılır. İngilizce arayüz için dil menüsünden **EN** seçin.
+Demo, tarayıcı dili Türkçe olduğunda Türkçe açılır. Diğer durumlarda İngilizce açılır. Dil menüsü TR ve EN arasında geçiş yapar ve bu seçim tarayıcıda hatırlanır.
 
 **Node.js:** `^22.12` (`.nvmrc` = 22.20.0)
 

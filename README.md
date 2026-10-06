@@ -10,6 +10,8 @@ Merge Rank Math, Redirection, and plain `source,destination` CSV/XLSX exports **
 
 License: MIT. Copyright: liarzpl.
 
+Version 0.2.1. The page shows this version from package.json at build time.
+
 The UI has light and dark themes, and a clearer results table.
 
 ## Screenshots
@@ -40,7 +42,7 @@ Narrow width, dark audit results.
 
 [https://liarzpl.github.io/redirect-map-qa/](https://liarzpl.github.io/redirect-map-qa/)
 
-The demo opens in Turkish. Choose **EN** in the language menu for this English interface.
+The demo opens in Turkish when the browser language is Turkish. Otherwise it opens in English. The language menu still switches between TR and EN, and that choice is remembered in this browser.
 
 **Node.js:** `^22.12` (`.nvmrc` is 22.20.0)
 

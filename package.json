@@ -1,12 +1,13 @@
 {
   "name": "redirect-map-qa",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "Rank Math + Redirection CSV birleştirme ve yönlendirme haritası QA — istemci tarafı",
   "private": true,
   "type": "module",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.app.json --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",

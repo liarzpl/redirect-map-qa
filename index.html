@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,7 +16,33 @@
     />
     <meta
       name="description"
-      content="Redirect CSV yükle, döngü ve çakışma bul, düzeltilmiş haritayı indir. Veri cihazınızda kalır."
+      content="Audit WordPress redirect maps in the browser. Find loops, conflicts, and chains in Rank Math, Redirection, or plain CSV files, then download a fixed map. Your data stays on your device."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Redirect Map QA" />
+    <meta
+      property="og:description"
+      content="Audit WordPress redirect maps in the browser. Find loops, conflicts, and chains in Rank Math, Redirection, or plain CSV files, then download a fixed map. Your data stays on your device."
+    />
+    <meta property="og:url" content="https://liarzpl.github.io/redirect-map-qa/" />
+    <meta property="og:image" content="https://liarzpl.github.io/redirect-map-qa/og.png" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta
+      property="og:image:alt"
+      content="Redirect Map QA in the browser: upload a redirect CSV, find loops, conflicts, and chains, then download a fixed map."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Redirect Map QA" />
+    <meta
+      name="twitter:description"
+      content="Audit WordPress redirect maps in the browser. Find loops, conflicts, and chains in Rank Math, Redirection, or plain CSV files, then download a fixed map. Your data stays on your device."
+    />
+    <meta name="twitter:url" content="https://liarzpl.github.io/redirect-map-qa/" />
+    <meta name="twitter:image" content="https://liarzpl.github.io/redirect-map-qa/og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Redirect Map QA in the browser: upload a redirect CSV, find loops, conflicts, and chains, then download a fixed map."
     />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <title>Redirect Map QA</title>
@@ -24,27 +50,27 @@
   <body>
     <main>
       <div id="update-banner" class="update-banner" hidden>
-        <span id="update-banner-text">Yeni sürüm hazır.</span>
-        <button type="button" id="btn-refresh">Yenile</button>
+        <span id="update-banner-text">A new version is ready. Press Refresh to update.</span>
+        <button type="button" id="btn-refresh">Refresh</button>
       </div>
 
       <header class="site-header">
         <div class="header-row">
           <h1 id="app-title">Redirect Map QA</h1>
           <label class="lang-select">
-            <span class="visually-hidden" id="lang-label">Dil</span>
+            <span class="visually-hidden" id="lang-label">Language</span>
             <select id="lang-select" aria-label="Language">
-              <option value="tr" selected>TR</option>
-              <option value="en">EN</option>
+              <option value="tr">TR</option>
+              <option value="en" selected>EN</option>
             </select>
           </label>
         </div>
         <p class="lead" id="lead-text">
-          Redirect CSV yükle → döngü, çakışma ve zinciri bul → düzeltilmiş haritayı indir.
+          Upload a redirect CSV → find loops, conflicts, and chains → download the fixed map.
         </p>
         <p class="meta-line">
           <span id="privacy-note"
-            >Veri cihazınızda kalır. Sunucu yok, ağ isteği yok, analytics yok.</span
+            >Data stays on your device. No server, no network requests, no analytics.</span
           >
           <span class="meta-sep" aria-hidden="true">·</span>
           <span id="xlsx-version"></span>
@@ -53,14 +79,14 @@
 
       <section class="card" id="step-upload" aria-labelledby="upload-heading">
         <h2 id="upload-heading" class="card-title">
-          <span id="upload-heading-text">Dosya yükle</span>
+          <span id="upload-heading-text">Upload a file</span>
         </h2>
         <div class="dropzone" id="dropzone">
           <p id="drop-hint">
-            Rank Math, Redirection veya düz CSV (source, destination). İsterseniz GSC.
+            Rank Math, Redirection, or a plain CSV (source, destination). GSC optional.
           </p>
           <label class="file-btn" id="upload-label">
-            <span id="upload-btn-text">Dosya seç</span>
+            <span id="upload-btn-text">Choose files</span>
             <input
               id="file-input"
               class="visually-hidden"
@@ -70,69 +96,69 @@
             />
           </label>
         </div>
-        <p id="empty-hint" class="empty-hint">CSV veya XLSX bırakın.</p>
+        <p id="empty-hint" class="empty-hint">Drop a CSV or XLSX.</p>
         <div id="file-list" class="file-list"></div>
         <div id="mapping-panel" class="mapping-panel" hidden>
-          <h3 class="card-subtitle" id="mapping-title">Sütun eşleme</h3>
+          <h3 class="card-subtitle" id="mapping-title">Column mapping</h3>
           <div id="mapping-forms"></div>
         </div>
         <div id="preview-warnings"></div>
         <div class="actions">
-          <button type="button" id="btn-run" class="primary" disabled>Denetle</button>
+          <button type="button" id="btn-run" class="primary" disabled>Audit</button>
         </div>
 
         <section id="step-preview" aria-labelledby="preview-heading" hidden>
           <h2 id="preview-heading" class="visually-hidden">
-            <span id="step-preview-title">Önizleme</span>
+            <span id="step-preview-title">Preview</span>
           </h2>
           <details class="advanced" id="advanced">
-            <summary id="advanced-summary">Gelişmiş</summary>
+            <summary id="advanced-summary">Advanced</summary>
             <p id="preview-intro" class="hint">
-              Dosya başına ilk satırlar. Eşleşmeyen kolon ve boş satır burada uyarılır.
+              First rows of each file. Unmatched columns and blank rows are flagged here.
             </p>
             <div id="preview-samples"></div>
 
             <fieldset class="options" id="norm-options">
-              <legend id="options-legend">Normalizasyon</legend>
+              <legend id="options-legend">Normalization</legend>
               <label>
                 <input type="checkbox" id="opt-path-case" />
-                <span id="lbl-path-case">Path büyük/küçük harf duyarsız</span>
+                <span id="lbl-path-case">Path case-insensitive</span>
               </label>
               <label>
                 <input type="checkbox" id="opt-trail-slash" checked />
-                <span id="lbl-trail-slash">Sondaki / farkını yok say</span>
+                <span id="lbl-trail-slash">Ignore trailing slash</span>
               </label>
               <label>
                 <input type="checkbox" id="opt-ignore-query" />
-                <span id="lbl-ignore-query">Query string’i yok say</span>
+                <span id="lbl-ignore-query">Ignore query string</span>
               </label>
             </fieldset>
 
             <!-- Duplicate politikası yalnız sunumdur; denetim bu değeri okumaz. -->
             <fieldset class="dup-options">
-              <legend id="dup-legend">Duplicate politikası</legend>
+              <legend id="dup-legend">Duplicate policy</legend>
               <label>
                 <input type="radio" name="dup-policy" value="check" checked />
-                <span id="dup-check">Kontrol etme</span>
+                <span id="dup-check">Check</span>
               </label>
               <label>
                 <input type="radio" name="dup-policy" value="ignore" />
-                <span id="dup-ignore">Yok say</span>
+                <span id="dup-ignore">Ignore</span>
               </label>
               <label>
                 <input type="radio" name="dup-policy" value="update" />
-                <span id="dup-update">Güncelle</span>
+                <span id="dup-update">Update</span>
               </label>
             </fieldset>
             <p id="dup-note" class="hint">
-              Yalnız sunum. Denetim ve dışa aktarma aynı kalır.
+              Presentation only. Audit and export stay the same.
             </p>
             <label class="check-line">
               <input type="checkbox" id="opt-select-all-flatten" />
-              <span id="lbl-flatten">Flatten önerilerini seç</span>
+              <span id="lbl-flatten">Select flatten suggestions</span>
             </label>
             <p id="flatten-help" class="hint">
-              Zincirleri son hedefe bağlar; loop içeren satırlara uygulanmaz.
+              Points chains at the final target. Rows in a loop are skipped.
             </p>
           </details>
         </section>
@@ -142,7 +168,7 @@
 
       <section class="card" id="summary-wrap" hidden aria-labelledby="results-heading">
         <h2 id="results-heading" class="card-title">
-          <span id="step-results-title">Sonuç</span>
+          <span id="step-results-title">Results</span>
         </h2>
         <div id="summary-counts" class="metric-strip"></div>
         <p id="severity-breakdown" class="breakdown"></p>
@@ -150,7 +176,7 @@
         <div id="preview-wrap">
           <div class="filter-bar">
             <label class="field field-grow">
-              <span id="search-label">Ara</span>
+              <span id="search-label">Search</span>
               <input
                 id="row-search"
                 type="search"
@@ -161,18 +187,18 @@
           </div>
 
           <details class="advanced" id="filter-details">
-            <summary id="filter-summary">Filtreler</summary>
+            <summary id="filter-summary">Filters</summary>
             <div class="filter-advanced">
               <div class="field">
-                <span id="severity-label">Şiddet</span>
+                <span id="severity-label">Severity</span>
                 <div class="segment" role="radiogroup" aria-labelledby="severity-label">
                   <label class="segment-opt">
                     <input type="radio" name="severity" value="all" checked />
-                    <span data-sev-label="all">Tümü</span>
+                    <span data-sev-label="all">All</span>
                   </label>
                   <label class="segment-opt">
                     <input type="radio" name="severity" value="issues" />
-                    <span data-sev-label="issues">sorun</span>
+                    <span data-sev-label="issues">issues</span>
                   </label>
                   <label class="segment-opt">
                     <input type="radio" name="severity" value="error" />
@@ -193,9 +219,9 @@
                 </div>
               </div>
               <label class="field">
-                <span id="filters-label">Bayrak</span>
+                <span id="filters-label">Flag</span>
                 <select id="flag-filter">
-                  <option value="all">Tümü</option>
+                  <option value="all">All</option>
                   <option value="duplicate">duplicate</option>
                   <option value="conflict">conflict</option>
                   <option value="chain">chain</option>
@@ -209,7 +235,7 @@
               <label class="field">
                 <span id="type-label">type</span>
                 <select id="type-filter">
-                  <option value="all">Tümü</option>
+                  <option value="all">All</option>
                 </select>
               </label>
             </div>
@@ -223,39 +249,39 @@
             </table>
           </div>
           <div class="pager">
-            <button type="button" id="btn-prev" disabled>Önceki</button>
+            <button type="button" id="btn-prev" disabled>Previous</button>
             <span id="page-info"></span>
-            <button type="button" id="btn-next" disabled>Sonraki</button>
+            <button type="button" id="btn-next" disabled>Next</button>
           </div>
           <div class="actions">
             <button type="button" id="btn-download-issues" disabled>
-              CSV indir: bulgular
+              Download CSV: findings
             </button>
             <button type="button" id="btn-download-map" disabled>
-              CSV indir: düzeltilmiş harita
+              Download CSV: fixed map
             </button>
           </div>
         </div>
       </section>
 
       <details class="advanced help-panel" id="help-details">
-        <summary id="help-summary">Status kodları ve bayraklar</summary>
+        <summary id="help-summary">Status codes and flags</summary>
         <div id="help-body"></div>
       </details>
 
       <section class="card" id="storage-panel" hidden>
-        <h2 class="card-title" id="storage-heading">Yerel saklama</h2>
+        <h2 class="card-title" id="storage-heading">Local storage</h2>
       </section>
 
       <section class="card" id="pwa-panel" hidden>
-        <h2 class="card-title" id="pwa-heading">Ana ekrana ekle (PWA)</h2>
+        <h2 class="card-title" id="pwa-heading">Add to home screen (PWA)</h2>
         <p id="install-hint" class="hint"></p>
       </section>
 
       <footer class="muted site-footer">
         <p id="footer-note">
-          Canlı HTTP kontrolü yok · Regex/wildcard desteklenmiyor (bayraklanır) ·
-          MIT · SheetJS 0.20.3
+          No live HTTP checks · Regex/wildcard is unsupported (flagged) · MIT ·
+          SheetJS 0.20.3
         </p>
       </footer>
     </main>

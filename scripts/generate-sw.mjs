@@ -12,7 +12,7 @@ const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
 const version = pkg.version;
 const CACHE = `tarayici-arac-v${version}`;
 
-const sw = `/* Service worker — yalnız statik dosyalar; veri göndermez. Otomatik üretildi. */
+const sw = `/* Service worker. Yalnız statik dosyalar; veri göndermez. Otomatik üretildi. */
 /* CACHE_VERSION: ${version} */
 const CACHE = ${JSON.stringify(CACHE)};
 
