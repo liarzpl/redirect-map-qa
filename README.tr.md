@@ -8,7 +8,7 @@ Rank Math, Redirection ve düz `source,destination` CSV/XLSX dışa aktarımlar�
 
 **Veri cihazınızda kalır.** Sunucu yok, OAuth yok, analytics yok, canlı HTTP kontrolü veya crawl yok.
 
-Lisans: MIT. Telif: liarzpl.
+Lisans: [MIT](LICENSE). Telif: liarzpl.
 
 Sürüm 0.2.1. Sayfa bu sürümü derleme sırasında package.json dosyasından gösterir.
 
