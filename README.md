@@ -1,161 +1,188 @@
+English | [Türkçe](README.tr.md)
+
 # Redirect Map QA
 
-Merge Rank Math, Redirection, and plain CSV/XLSX redirect maps **in the browser**. Flag duplicate sources, conflicting destinations, chains, loops, and self-redirects, then download a cleaned map and an issues report.
+Merge Rank Math, Redirection, and plain `source,destination` CSV/XLSX exports **in the browser**. Find duplicate sources, conflicting destinations, chains, loops, and self-redirects. An optional Google Search Console (GSC) Pages or Performance CSV adds click priority. Download a cleaned map CSV and an issues report.
 
-**[Live demo](https://liarzpl.github.io/redirect-map-qa/)** · Privacy: files never leave the browser — no server, no OAuth, no analytics.
+**[Live demo](https://liarzpl.github.io/redirect-map-qa/)**
 
-Rank Math Redirects, Redirection (John Godley) ve düz `source,destination` CSV/XLSX dışa aktarımlarını **tarayıcıda** birleştirir; yinelenen kaynak, çakışan hedef, zincir, döngü ve self-redirect bulur. Opsiyonel Google Search Console (GSC) Pages/Performance CSV ile tıklama önceliği ekler. Düzeltilmiş map CSV ve sorun raporu indirir.
+**Your data stays on your device.** No server, no OAuth, no analytics, and no live HTTP check or crawl.
 
-**Veri cihazınızda kalır.** Sunucu yok, OAuth yok, analytics yok, canlı HTTP/crawl yok.
+License: MIT. Copyright: liarzpl.
 
-Lisans: MIT · Telif: liarzpl
+The UI has light and dark themes, and a clearer results table.
 
-## Hızlı başlangıç
+## Screenshots
+
+![Dark theme audit results](docs/screenshots/en/desktop-dark-results.png)
+
+Dark theme, audit results.
+
+![Light theme empty upload](docs/screenshots/en/desktop-light-empty.png)
+
+Light theme, empty upload.
+
+![Dark theme empty upload](docs/screenshots/en/desktop-dark-empty.png)
+
+Dark theme, empty upload.
+
+![Dark theme with files loaded](docs/screenshots/en/desktop-dark-data.png)
+
+Dark theme, files loaded.
+
+![Narrow dark audit results](docs/screenshots/en/narrow-dark-results.png)
+
+Narrow width, dark audit results.
+
+## Quick start
 
 ### Demo
 
 [https://liarzpl.github.io/redirect-map-qa/](https://liarzpl.github.io/redirect-map-qa/)
 
-**Node.js:** `^22.12` (`.nvmrc` = 22.20.0)
+The demo opens in Turkish. Choose **EN** in the language menu for this English interface.
+
+**Node.js:** `^22.12` (`.nvmrc` is 22.20.0)
+
+From the repository root:
 
 ```bash
-cd app   # veya repo kökü
 npm ci
 npm test
 npm run build
 npm run preview
 ```
 
-Geliştirme: `npm run dev`
+Development: `npm run dev`
 
-## Desteklenen girdiler
+## Supported inputs
 
-Çoklu dosya yükleme (CSV / XLSX). Dosya türü başlıklardan tahmin edilir; kullanıcı değiştirebilir. Bilinmeyen export için sütun seçici (source / destination / type / regex / matching / GSC alanları).
+Upload multiple files (CSV / XLSX). The file kind is guessed from the headers, and you can change it. Unknown exports get a column picker (source / destination / type / regex / matching / GSC fields).
 
 ### Rank Math Redirects CSV
 
-Kaynak: [How to Create & Edit Redirects Using CSV (Rank Math KB)](https://rankmath.com/kb/how-to-manage-redirects-via-csv/)
+Source: [How to Create & Edit Redirects Using CSV (Rank Math KB)](https://rankmath.com/kb/how-to-manage-redirects-via-csv/)
 
-Doğrulanmış sütunlar (başlıklar küçük harf, sırasız):
+Verified columns (headers lowercased, order does not matter):
 
-| Sütun | Not |
-|-------|-----|
-| `id` | Düzenleme için |
-| `source` | Kaynak URL(ler) |
+| Column | Note |
+|--------|------|
+| `id` | Used when editing |
+| `source` | Source URL(s) |
 | `matching` | `exact`, `contains`, `start`, `end`, `regex` |
-| `destination` | Hedef |
+| `destination` | Target |
 | `type` | `301`, `302`, `307`, `410`, `451` |
-| `category` | Opsiyonel |
+| `category` | Optional |
 | `status` | `active` / `inactive` |
-| `ignore` | boş veya `case` |
+| `ignore` | empty or `case` |
 
-`matching` ∈ {`regex`,`contains`,`start`,`end`} → satır **unsupported** (denetime girmez).
+If `matching` is one of `regex`, `contains`, `start`, or `end`, the row is **unsupported** and is left out of the audit.
 
 ### Redirection (John Godley) CSV
 
-Doküman (import biçimi): [Import and export – Redirection](https://redirection.me/support/import-export/)
+Import format: [Import and export](https://redirection.me/support/import-export/)
 
-Export sütunları (kaynak kod `fileio/csv.php`, jsDelivr `johngodley/redirection@5.5.2`):
+Export columns (source `fileio/csv.php`, jsDelivr `johngodley/redirection@5.5.2`):
 
-| Sütun | Not |
-|-------|-----|
-| `source` | Kaynak |
-| `target` | Hedef (bizde destination rolü) |
+| Column | Note |
+|--------|------|
+| `source` | Source |
+| `target` | Target (destination in this tool) |
 | `regex` | `0` / `1` |
-| `code` | HTTP kodu (301…) |
+| `code` | HTTP code (`301`...) |
 | `type` | `url` / `error` |
-| `hits` | İstatistik |
-| `title` | Başlık |
+| `hits` | Statistics |
+| `title` | Title |
 | `status` | `active` / `disabled` |
 
-Opsiyonel `group` sütunu: [PR #4201](https://github.com/johngodley/redirection/pull/4201) ile yeni sürümlerde görülebilir; tanıma için zorunlu değil.
+An optional `group` column can appear in newer releases via [PR #4201](https://github.com/johngodley/redirection/pull/4201). It is not required for detection.
 
-Dokümandaki import örneği başlıksız da olabilir (`source URL,target URL[,regex,http code,type]`). Başlıksız dosyalar **bilinmeyen** sayılır → sütun seçici.
+The documented import example can also be headerless (`source URL,target URL[,regex,http code,type]`). Headerless files are treated as **unknown**, so the column picker is used.
 
-`regex=1` veya kaynakta `*` → **unsupported**.
+`regex=1`, or a `*` in the source, is **unsupported**.
 
-### Düz CSV
+### Plain CSV
 
-`source,destination` (veya `kaynak`/`hedef`, `from`/`to`). Opsiyonel `type`.
+`source,destination` (or `kaynak`/`hedef`, `from`/`to`). Optional `type`.
 
-### GSC Pages / Performance (opsiyonel)
+### GSC Pages / Performance (optional)
 
-| Rol | EN | TR |
-|-----|----|----|
-| Sayfa | `Top pages`, `Page`, `Landing page`, `URL` | `En çok ziyaret edilen sayfalar`, `Üst sayfalar`, `Sayfa` |
-| Tıklama | `Clicks` | `Tıklamalar` |
-| Gösterim | `Impressions` | `Gösterimler` |
+| Role | Recognized headers |
+|------|--------------------|
+| Page | `Top pages`, `Page`, `Landing page`, `URL`, `En çok ziyaret edilen sayfalar`, `Üst sayfalar`, `Sayfa` |
+| Clicks | `Clicks`, `Tıklamalar` |
+| Impressions | `Impressions`, `Gösterimler` |
 
-GSC sütun adları ürün diline göre değişebilir; tanınmazsa sütun seçici kullanın.
+GSC column names vary by product language. If they are not recognized, use the column picker.
 
-### Doğrulanamayanlar
+### Not fully verified
 
-- Redirection’ın **tüm** sürümlerinde export başlıklarının birebirliği (örnek canlı site export’u yok; 5.5.2 kaynak + PR #4201 ile doğrulandı).
-- Rank Math’in export’ta her zaman `matching` yazıp yazmadığı (KB import şeması doğrulandı; export’un aynı başlıkları ürettiği KB’de belirtiliyor).
-- GSC CSV’nin tüm dil/yerel başlık varyantları.
+- Exact export headers on **every** Redirection version (no live-site export sample; checked against the 5.5.2 source and PR #4201).
+- Whether Rank Math always writes `matching` on export (the KB import schema is verified, and the KB says export uses the same headers).
+- Every language and locale variant of GSC CSV headers.
 
-## Normalizasyon kuralları
+## Normalization rules
 
-Karşılaştırmadan önce:
+Before comparison:
 
-1. `trim`; **fragment** (`#…`) atılır  
-2. Tam URL → `host` (küçük harf) + `path` (+ query)  
-3. Göreli path → başına `/`  
-4. **Path** varsayılan **case-sensitive**; seçenekle duyarsız  
-5. **Host** her zaman case-insensitive  
-6. Sondaki `/` farkı varsayılan yok sayılır (kök `/` hariç); kapatılabilir  
-7. **Query** varsayılan korunur; yok sayılabilir  
-8. Yüzde kodlama path segment’lerinde normalize edilir  
+1. `trim`. The **fragment** (`#...`) is dropped.
+2. An absolute URL becomes `host` (lowercase) + `path` (+ query).
+3. A relative path gets a leading `/`.
+4. **Path** is **case-sensitive** by default. An option makes it insensitive.
+5. **Host** is always case-insensitive.
+6. A trailing `/` difference is ignored by default (except the root `/`). This can be turned off.
+7. **Query** is kept by default. It can be ignored.
+8. Percent-encoding is normalized inside path segments.
 
-## Denetimler
+## Audits
 
-| Bayrak | Anlam |
-|--------|--------|
-| `duplicate` | Aynı source + aynı destination (dosyalar arası dahil) |
-| `conflict` | Aynı source, farklı destination |
-| `chain` | A→B ve B→C (uzunluk ≥ 2 hop); flatten önerisi |
-| `loop` | Döngü (2+); flatten **yok** |
-| `self` | source == destination (normalize sonrası) |
-| `unsupported` | Regex / wildcard / contains|start|end — denetime girmez |
+| Flag | Meaning |
+|------|---------|
+| `duplicate` | Same source and same destination (including across files) |
+| `conflict` | Same source, different destination |
+| `chain` | A→B and B→C (length ≥ 2 hops). Flatten is suggested |
+| `loop` | A cycle (2+). Flatten is **not** suggested |
+| `self` | source == destination (after normalization) |
+| `unsupported` | Regex / wildcard / contains\|start\|end: left out of the audit |
 
-Her satırda kaynak **dosya adı** ve **satır no** korunur.
+Each row keeps its source **file name** and **line number**.
 
-**Flatten:** Zinciri son hedefe tek hop indiren öneri; kullanıcı onay kutusuyla seçmeden çıktıya yazılmaz. Döngülerde öneri yok.
+**Flatten:** A suggestion that collapses a chain to one hop at the final target. It is not written to the output unless you check the box. Loops get no suggestion.
 
-**GSC join:** `sourceNorm` ↔ `pageNorm`; sıralama: sorunlu + yüksek click önce.
+**GSC join:** `sourceNorm` is matched to `pageNorm`. Sort order: issues first, then higher clicks.
 
-## Çıktı
+## Output
 
-- Filtrelenebilir birleşik tablo (bayrak filtresi, özet sayaçlar, sayfalama)  
-- `redirect-map-fixed.csv` → `source,destination,type` (onaylı flatten uygulanır)  
-- `redirect-map-issues.csv` → sorunlu satırlar  
-- İndirmede **formula-guard** zorunlu (`= + - @ |` ve fullwidth)
+- A filterable merged table (flag filter, summary counts, pagination)
+- `redirect-map-fixed.csv` with `source,destination,type` (checked flatten rows are applied)
+- `redirect-map-issues.csv` with the rows that have issues
+- Downloads always apply **formula-guard** (`= + - @ |` and fullwidth forms)
 
-## Sınırlar
+## Limits
 
-- Dosya başı **10 MB**  
-- Dosya başı / birleşik **100.000** satır  
-- Ağır denetim **Web Worker** (`worker-src 'self'`)
+- **10 MB** per file
+- **100,000** rows per file, and 100,000 combined rows
+- Heavy auditing runs in a **Web Worker** (`worker-src 'self'`)
 
-## Desteklenmeyenler
+## Unsupported
 
-- Canlı destination HTTP kontrolü / crawl  
-- Regex / wildcard kurallarının çözümü  
-- WordPress eklentisi / wp-admin  
-- Sunucu, OAuth, analytics  
+- Live HTTP checks or crawls of destinations
+- Resolving regex or wildcard rules
+- A WordPress plugin or wp-admin
+- A server, OAuth, or analytics
 
-## Güvenlik
+## Security
 
-- SheetJS **0.20.3** (cdn.sheetjs.com tgz); npm `xlsx@0.18.5` yok  
-- CSP tek kaynak `shared/csp.mjs` (`unsafe-inline` yok)  
-- `innerHTML` ile kullanıcı verisi yok  
-- PWA / yerel saklama varsayılan **kapalı**  
-- `fetch` / XHR / `sendBeacon` yok  
+- SheetJS **0.20.3** from the cdn.sheetjs.com tarball. npm `xlsx@0.18.5` is not used.
+- CSP comes from one source, `shared/csp.mjs` (no `unsafe-inline`).
+- User data is not inserted with `innerHTML`.
+- PWA and local storage are **off** by default.
+- No `fetch`, XHR, or `sendBeacon`.
 
-## Teknoloji
+## Technology
 
-Vite 6 + vanilla TypeScript + Vitest. Şablon: `fikir-fabrikasi/sablon/tarayici-arac` @ `cfb3815`.
+Vite 6, vanilla TypeScript, and Vitest. Template: `fikir-fabrikasi/sablon/tarayici-arac` @ `cfb3815`.
 
-## Gizlilik
+## Privacy
 
-Tüm işlem tarayıcıda; dosyalar cihazdan çıkmaz.
+All processing stays in the browser. Files do not leave the device.

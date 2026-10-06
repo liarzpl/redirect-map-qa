@@ -16,6 +16,15 @@ describe('normalizeHeader / Türkçe', () => {
     expect(normalizeHeader('FİYAT')).toBe(normalizeHeader('fiyat'));
   });
 
+  it('ASCII I, İ ve ı aynı başlık anahtarına katlanır', () => {
+    expect(normalizeHeader('Impressions')).toBe('impressions');
+    expect(normalizeHeader('İmpressions')).toBe('impressions');
+    expect(normalizeHeader('ıMPRESSIONS')).toBe('impressions');
+    expect(normalizeHeader('GÖSTERİMLER')).toBe(normalizeHeader('Gösterimler'));
+    expect(normalizeHeader('Tıklamalar')).toBe(normalizeHeader('tiklamalar'));
+    expect(normalizeHeader('FİYAT')).toBe('fiyat');
+  });
+
   it('boşluk / ayırıcı / büyük-küçük harf eşitlemesi', () => {
     expect(normalizeHeader('  Ürün  Adı ')).toBe(normalizeHeader('ürün adı'));
     expect(normalizeHeader('urun_adi')).toBe(normalizeHeader('urun adi'));

@@ -20,6 +20,11 @@
 
 import { normalizeHeader } from './columns';
 
+/** Takma adlar başlıkla aynı anahtardan geçer (İ/I/ı → i). */
+function aliasSet(names: readonly string[]): Set<string> {
+  return new Set(names.map((name) => normalizeHeader(name)));
+}
+
 export type FileKind =
   | 'rankmath'
   | 'redirection'
@@ -45,18 +50,18 @@ export interface SchemaDetection {
   notes: string[];
 }
 
-const RM_SOURCE = new Set(['source']);
-const RM_DEST = new Set(['destination']);
-const RM_MATCH = new Set(['matching']);
-const RM_TYPE = new Set(['type']);
+const RM_SOURCE = aliasSet(['source']);
+const RM_DEST = aliasSet(['destination']);
+const RM_MATCH = aliasSet(['matching']);
+const RM_TYPE = aliasSet(['type']);
 
-const RD_SOURCE = new Set(['source', 'sourceurl']);
-const RD_TARGET = new Set(['target', 'targeturl']);
-const RD_REGEX = new Set(['regex']);
-const RD_CODE = new Set(['code', 'httpcode']);
+const RD_SOURCE = aliasSet(['source', 'sourceurl']);
+const RD_TARGET = aliasSet(['target', 'targeturl']);
+const RD_REGEX = aliasSet(['regex']);
+const RD_CODE = aliasSet(['code', 'httpcode']);
 
-const PLAIN_SOURCE = new Set(['source', 'kaynak', 'from', 'eskiurl', 'oldurl']);
-const PLAIN_DEST = new Set([
+const PLAIN_SOURCE = aliasSet(['source', 'kaynak', 'from', 'eskiurl', 'oldurl']);
+const PLAIN_DEST = aliasSet([
   'destination',
   'target',
   'hedef',
@@ -65,7 +70,7 @@ const PLAIN_DEST = new Set([
   'newurl',
 ]);
 
-const GSC_PAGE = new Set([
+const GSC_PAGE = aliasSet([
   'toppages',
   'page',
   'landingpage',
@@ -77,8 +82,8 @@ const GSC_PAGE = new Set([
   'sayfa',
   'sayfalar',
 ]);
-const GSC_CLICKS = new Set(['clicks', 'tıklamalar', 'tiklamalar']);
-const GSC_IMPR = new Set(['impressions', 'gösterimler', 'gosterimler']);
+const GSC_CLICKS = aliasSet(['clicks', 'tıklamalar', 'tiklamalar']);
+const GSC_IMPR = aliasSet(['impressions', 'gösterimler', 'gosterimler']);
 
 function idx(headers: string[], aliases: Set<string>): number {
   for (let i = 0; i < headers.length; i++) {
@@ -114,9 +119,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
         matching: rmMatch,
         type: idx(headers, RM_TYPE) >= 0 ? idx(headers, RM_TYPE) : undefined,
       },
-      notes: [
-        'Rank Math CSV: id, source, matching, destination, type, category, status, ignore',
-      ],
+      notes: ['noteRankMath'],
     };
   }
   // Rank Math zayıf: source+destination ve 'category' veya 'ignore' var, target yok
@@ -135,7 +138,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
           matching: rmMatch >= 0 ? rmMatch : undefined,
           type: idx(headers, RM_TYPE) >= 0 ? idx(headers, RM_TYPE) : undefined,
         },
-        notes: ['Rank Math benzeri (matching yok veya eksik)'],
+        notes: ['noteRankMathWeak'],
       };
     }
   }
@@ -159,9 +162,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
         regex: rdRegex >= 0 ? rdRegex : undefined,
         type: rdCode >= 0 ? rdCode : idx(headers, RM_TYPE) >= 0 ? idx(headers, RM_TYPE) : undefined,
       },
-      notes: [
-        'Redirection CSV: source, target, regex, code, type, hits, title, status (+opsiyonel group)',
-      ],
+      notes: ['noteRedirection'],
     };
   }
 
@@ -178,7 +179,7 @@ export function detectSchema(headers: string[]): SchemaDetection {
         clicks: gscClicks >= 0 ? gscClicks : undefined,
         impressions: gscImpr >= 0 ? gscImpr : undefined,
       },
-      notes: ['GSC Pages/Performance CSV'],
+      notes: ['noteGsc'],
     };
   }
 
@@ -194,11 +195,11 @@ export function detectSchema(headers: string[]): SchemaDetection {
         destination: pDst,
         type: idx(headers, RM_TYPE) >= 0 ? idx(headers, RM_TYPE) : undefined,
       },
-      notes: ['Düz source,destination CSV'],
+      notes: ['notePlain'],
     };
   }
 
-  notes.push('Bilinmeyen şema: sütun seçici gerekli');
+  notes.push('noteUnknown');
   return { kind: 'unknown', confidence: 'low', roles: {}, notes };
 }
 

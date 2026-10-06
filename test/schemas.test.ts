@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { detectSchema, isUnsupportedRule } from '../src/lib/schemas';
 
 describe('detectSchema', () => {
@@ -57,6 +57,77 @@ describe('detectSchema', () => {
   it('GSC İngilizce başlıklar', () => {
     const d = detectSchema(['Top pages', 'Clicks', 'Impressions']);
     expect(d.kind).toBe('gsc');
+  });
+
+  it('English GSC export binds clicks and impressions', () => {
+    const d = detectSchema([
+      'Top pages',
+      'Clicks',
+      'Impressions',
+      'CTR',
+      'Position',
+    ]);
+    expect(d.kind).toBe('gsc');
+    expect(d.roles.page).toBe(0);
+    expect(d.roles.clicks).toBe(1);
+    expect(d.roles.impressions).toBe(2);
+  });
+
+  it('Turkish GSC export still binds clicks and impressions', () => {
+    const d = detectSchema([
+      'En çok ziyaret edilen sayfalar',
+      'Tıklamalar',
+      'Gösterimler',
+      'TO',
+      'Pozisyon',
+    ]);
+    expect(d.kind).toBe('gsc');
+    expect(d.roles.page).toBe(0);
+    expect(d.roles.clicks).toBe(1);
+    expect(d.roles.impressions).toBe(2);
+  });
+
+  it('English and Turkish GSC headers map Impressions under tr-TR with no Unmatched column warning', async () => {
+    const original = String.prototype.toLocaleLowerCase;
+    String.prototype.toLocaleLowerCase = function (
+      this: string,
+      locales?: Intl.LocalesArgument,
+    ): string {
+      return original.call(this, locales ?? 'tr-TR');
+    };
+    vi.resetModules();
+    try {
+      // Runtime default locale is Turkish: bare toLocaleLowerCase("I") → "ı".
+      expect('Impressions'.toLocaleLowerCase()).toBe('ımpressions');
+
+      const { detectSchema: detect } = await import('../src/lib/schemas');
+      const { listUnmatchedColumns } = await import('../src/lib/columns');
+
+      const rows = [
+        'Top pages,Clicks,Impressions,CTR,Position',
+        'En çok ziyaret edilen sayfalar,Tıklamalar,Gösterimler,TO,Pozisyon',
+      ];
+      for (const line of rows) {
+        const headers = line.split(',');
+        const detected = detect(headers);
+        expect(detected.kind).toBe('gsc');
+        expect(detected.roles.impressions).toBe(2);
+        expect(listUnmatchedColumns(headers)).toEqual([]);
+      }
+    } finally {
+      String.prototype.toLocaleLowerCase = original;
+      vi.resetModules();
+    }
+  });
+
+  it('dotted capital İ still matches impressions', () => {
+    const d = detectSchema(['Sayfa', 'Tıklamalar', 'GÖSTERİMLER']);
+    expect(d.kind).toBe('gsc');
+    expect(d.roles.clicks).toBe(1);
+    expect(d.roles.impressions).toBe(2);
+
+    const dottedEnglish = detectSchema(['Top pages', 'Clicks', 'İmpressions']);
+    expect(dottedEnglish.roles.impressions).toBe(2);
   });
 
   it('bilinmeyen → unknown', () => {

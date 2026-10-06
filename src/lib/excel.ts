@@ -16,10 +16,30 @@ export interface ParsedSheet {
   sheetName: string;
 }
 
+export type FileErrorCode =
+  | 'unreadable'
+  | 'notXlsx'
+  | 'notXls'
+  | 'empty'
+  | 'tooBig'
+  | 'badExt'
+  | 'readFailed'
+  | 'noSheet'
+  | 'sheetUnreadable'
+  | 'noHeader'
+  | 'emptyHeader'
+  | 'tooManyRows'
+  | 'combined';
+
 export class FileParseError extends Error {
-  constructor(message: string) {
+  readonly code: FileErrorCode | undefined;
+  readonly vars: Record<string, string>;
+
+  constructor(message: string, code?: FileErrorCode, vars?: Record<string, string>) {
     super(message);
     this.name = 'FileParseError';
+    this.code = code;
+    this.vars = vars ?? {};
   }
 }
 
@@ -31,6 +51,7 @@ function assertWorkbookMagic(buffer: ArrayBuffer, ext: string): void {
   if (bytes.length < 4) {
     throw new FileParseError(
       'Dosya açılamadı. Bozuk veya geçersiz bir Excel/CSV olabilir.',
+      'unreadable',
     );
   }
   const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b;
@@ -42,11 +63,13 @@ function assertWorkbookMagic(buffer: ArrayBuffer, ext: string): void {
   if (ext === '.xlsx' && !isZip) {
     throw new FileParseError(
       'Dosya geçerli bir Excel (.xlsx) değil. Bozuk veya yanlış biçimli olabilir.',
+      'notXlsx',
     );
   }
   if (ext === '.xls' && !isOle && !isZip) {
     throw new FileParseError(
       'Dosya geçerli bir Excel (.xls) değil. Bozuk veya yanlış biçimli olabilir.',
+      'notXls',
     );
   }
 }
@@ -59,18 +82,22 @@ export function getExtension(filename: string): string {
 
 export function assertAllowedFile(file: File): void {
   if (!file || file.size === 0) {
-    throw new FileParseError('Dosya boş veya seçilmedi.');
+    throw new FileParseError('Dosya boş veya seçilmedi.', 'empty');
   }
   if (file.size > MAX_FILE_BYTES) {
     const mb = (MAX_FILE_BYTES / (1024 * 1024)).toFixed(0);
     throw new FileParseError(
       `Dosya çok büyük (${formatBytes(file.size)}). En fazla ${mb} MB yükleyebilirsiniz.`,
+      'tooBig',
+      { size: formatBytes(file.size), mb },
     );
   }
   const ext = getExtension(file.name);
   if (!ALLOWED_EXT.has(ext)) {
     throw new FileParseError(
       `Desteklenmeyen dosya uzantısı: «${ext || '(yok)'}». Yalnız .xlsx, .xls veya .csv kabul edilir.`,
+      'badExt',
+      { ext },
     );
   }
 }
@@ -89,7 +116,7 @@ export async function parseWorkbookFile(file: File): Promise<ParsedSheet> {
   try {
     buffer = await file.arrayBuffer();
   } catch {
-    throw new FileParseError('Dosya okunamadı. Yeniden seçip deneyin.');
+    throw new FileParseError('Dosya okunamadı. Yeniden seçip deneyin.', 'readFailed');
   }
 
   return parseWorkbookBuffer(buffer, file.name);
@@ -113,17 +140,18 @@ export function parseWorkbookBuffer(
   } catch {
     throw new FileParseError(
       'Dosya açılamadı. Bozuk veya geçersiz bir Excel/CSV olabilir.',
+      'unreadable',
     );
   }
 
   if (!workbook.SheetNames.length) {
-    throw new FileParseError('Dosyada sayfa bulunamadı.');
+    throw new FileParseError('Dosyada sayfa bulunamadı.', 'noSheet');
   }
 
   const sheetName = workbook.SheetNames[0]!;
   const sheet = workbook.Sheets[sheetName];
   if (!sheet) {
-    throw new FileParseError('İlk sayfa okunamadı.');
+    throw new FileParseError('İlk sayfa okunamadı.', 'sheetUnreadable');
   }
 
   const data = XLSX.utils.sheet_to_json<SheetRow>(sheet, {
@@ -134,23 +162,33 @@ export function parseWorkbookBuffer(
   });
 
   if (!data.length) {
-    throw new FileParseError('Dosya boş görünüyor; başlık satırı yok.');
+    throw new FileParseError('Dosya boş görünüyor; başlık satırı yok.', 'noHeader');
   }
 
   const headers = (data[0] as unknown[]).map((h) => String(h ?? '').trim());
   if (!headers.some((h) => h.length > 0)) {
-    throw new FileParseError('Başlık satırı boş veya okunamadı.');
+    throw new FileParseError('Başlık satırı boş veya okunamadı.', 'emptyHeader');
   }
 
   const rows = data.slice(1) as SheetRow[];
   if (rows.length > MAX_ROWS) {
     throw new FileParseError(
       `Satır sınırı aşıldı: ${rows.length.toLocaleString('tr-TR')} satır var, en fazla ${MAX_ROWS.toLocaleString('tr-TR')} kabul edilir.`,
+      'tooManyRows',
+      { count: String(rows.length), max: String(MAX_ROWS) },
     );
   }
 
   logger.info('Dosya ayrıştırıldı');
   return { headers, rows, sheetName };
+}
+
+/** İndirilen ad. Mevcut xls/xlsx/csv uzantısı bir kez düşer, sonra bookType eklenir. */
+export function workbookDownloadName(
+  filename: string,
+  bookType: 'xlsx' | 'csv',
+): string {
+  return `${filename.replace(/\.(xlsx?|csv)$/i, '')}.${bookType}`;
 }
 
 export function downloadEscapedWorkbook(
@@ -169,10 +207,7 @@ export function downloadEscapedWorkbook(
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, 'Sonuc');
 
-  const outName =
-    bookType === 'csv'
-      ? filename.replace(/\.xlsx?$/i, '') + '.csv'
-      : filename.replace(/\.csv$/i, '') + '.xlsx';
+  const outName = workbookDownloadName(filename, bookType);
 
   XLSX.writeFile(wb, outName, { bookType, compression: true });
   logger.info('Dosya indirildi');
