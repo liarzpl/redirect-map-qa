@@ -16,7 +16,7 @@ import {
   TABLE_PAGE_SIZE,
 } from './config';
 import { runAudits } from './lib/audit';
-import { normalizeHeader } from './lib/columns';
+import { listUnmatchedColumns, normalizeHeader } from './lib/columns';
 import { FileParseError, getXlsxVersion, parseWorkbookFile } from './lib/excel';
 import { downloadFixedMapCsv, downloadIssuesCsv } from './lib/export-csv';
 import { joinGsc, sortByPriority } from './lib/gsc';
@@ -61,50 +61,6 @@ const FLAG_PRIORITY: AuditFlag[] = [
 
 const PREVIEW_N = 8;
 const REDIRECT_CODES = new Set(['301', '302', '303', '304', '307']);
-const KNOWN_HEADERS = new Set(
-  [
-    'id',
-    'category',
-    'status',
-    'ignore',
-    'hits',
-    'title',
-    'group',
-    'source',
-    'destination',
-    'target',
-    'sourceurl',
-    'targeturl',
-    'matching',
-    'type',
-    'regex',
-    'code',
-    'httpcode',
-    'page',
-    'toppages',
-    'landingpage',
-    'url',
-    'clicks',
-    'impressions',
-    'kaynak',
-    'hedef',
-    'from',
-    'to',
-    'eskiurl',
-    'oldurl',
-    'yeniurl',
-    'newurl',
-    'sayfa',
-    'sayfalar',
-    'ustsayfalar',
-    'encokziyaretedilensayfalar',
-    'ençokziyaretedilensayfalar',
-    'tiklamalar',
-    'tıklamalar',
-    'gosterimler',
-    'gösterimler',
-  ].map((name) => normalizeHeader(name)),
-);
 const IGNORE_ON = new Set(['1', 'yes', 'true', 'ignore', 'on']);
 
 let lang: Lang = 'tr';
@@ -465,10 +421,7 @@ function previewWarnings(upload: UploadState): string[] {
     warnings.push(t(lang, 'noSource'));
   }
 
-  const unmatched = upload.headers.filter((header) => {
-    const name = normalizeHeader(header ?? '');
-    return name.length > 0 && !KNOWN_HEADERS.has(name);
-  });
+  const unmatched = listUnmatchedColumns(upload.headers);
   if (unmatched.length) {
     warnings.push(`${t(lang, 'unmatched')}: ${unmatched.join(', ')}`);
   }

@@ -1,27 +1,109 @@
 /**
  * Kolon eşleme: sıra değil, başlık adına göre.
  * Türkçe karakter, büyük/küçük harf ve boşluk normalizasyonu.
+ *
+ * Başlık anahtarı tr-TR kullanmaz. O yerelde ASCII "I" → "ı" olur;
+ * İngilizce "Impressions" "impressions" ile eşleşmez. İ, I ve ı
+ * başlıkta ve takma ad listesinde aynı şekilde "i"ye katlanır.
  */
 
-/** Türkçe İ/ı ve diğer harfler için locale-aware küçük harf. */
+/**
+ * Türkçe locale küçük harf (I→ı, İ→i).
+ * Başlık eşlemede kullanılmaz; orada {@link normalizeHeader} geçerlidir.
+ */
 export function toLocaleLowerTr(text: string): string {
-  // Önce İ→i, I→ı dönüşümü (toLocaleLowerCase('tr') bunu yapar)
   return text.toLocaleLowerCase('tr-TR');
 }
 
 /**
+ * Locale-bağımsız başlık anahtarı: İ/I/ı → i, sonra düz toLowerCase.
+ * Birleşik nokta (İ → i + U+0307) da düşer.
+ */
+function foldHeaderCase(text: string): string {
+  return text
+    .replace(/\u0130/g, 'i') // İ
+    .replace(/I/g, 'i')
+    .replace(/\u0131/g, 'i') // ı
+    .toLowerCase()
+    .replace(/\u0307/g, '');
+}
+
+/**
  * Başlık normalizasyonu:
+ * - İ/I/ı → i ve düz küçük harf (locale-bağımsız)
  * - trim
  * - birden fazla boşluk → tek boşluk
- * - Türkçe küçük harf
  * - yaygın ayırıcıları kaldır/eşitle (alt çizgi, tire → boşluk sonra kaldır)
  */
 export function normalizeHeader(header: string): string {
-  return toLocaleLowerTr(header)
+  return foldHeaderCase(header)
     .trim()
     .replace(/[_\-./\\]+/g, ' ')
     .replace(/\s+/g, ' ')
     .replace(/\s/g, ''); // karşılaştırma için boşluksuz
+}
+
+/** Preview'da "Unmatched column" sayılmayan başlıklar. Anahtarlar normalizeHeader'dan geçer. */
+const KNOWN_HEADER_NAMES = [
+  'id',
+  'category',
+  'status',
+  'ignore',
+  'hits',
+  'title',
+  'group',
+  'source',
+  'destination',
+  'target',
+  'sourceurl',
+  'targeturl',
+  'matching',
+  'type',
+  'regex',
+  'code',
+  'httpcode',
+  'page',
+  'toppages',
+  'landingpage',
+  'url',
+  'clicks',
+  'impressions',
+  'kaynak',
+  'hedef',
+  'from',
+  'to',
+  'eskiurl',
+  'oldurl',
+  'yeniurl',
+  'newurl',
+  'sayfa',
+  'sayfalar',
+  'ustsayfalar',
+  'encokziyaretedilensayfalar',
+  'ençokziyaretedilensayfalar',
+  'tiklamalar',
+  'tıklamalar',
+  'gosterimler',
+  'gösterimler',
+  'ctr',
+  'position',
+  'pozisyon',
+  'tiklamaorani',
+  'tıklamaoranı',
+  'averageposition',
+  'ortalamapozisyon',
+] as const;
+
+/**
+ * Tanınmayan başlıklar. Preview bunları "Unmatched column" diye işaretler.
+ * Küme her çağrıda kurulur; başlık anahtarı locale'e bağlı kalmasın.
+ */
+export function listUnmatchedColumns(headers: readonly string[]): string[] {
+  const known = new Set(KNOWN_HEADER_NAMES.map((name) => normalizeHeader(name)));
+  return headers.filter((header) => {
+    const name = normalizeHeader(header ?? '');
+    return name.length > 0 && !known.has(name);
+  });
 }
 
 /**
