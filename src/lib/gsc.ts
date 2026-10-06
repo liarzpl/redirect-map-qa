@@ -1,7 +1,9 @@
 /**
- * Opsiyonel GSC Pages join: sourceNorm ↔ pageNorm.
+ * Opsiyonel GSC Pages join: path anahtarı (şema ve host yok).
+ * GSC mutlak URL, yönlendirme çoğu zaman göreli path verir.
  */
 
+import { pathKeyFromNormalized } from './normalize';
 import type { GscRecord, RedirectRecord } from './types';
 
 export function joinGsc(
@@ -10,19 +12,20 @@ export function joinGsc(
 ): void {
   const map = new Map<string, GscRecord>();
   for (const g of gsc) {
-    if (!g.pageNorm) continue;
-    const prev = map.get(g.pageNorm);
+    const key = pathKeyFromNormalized(g.pageNorm);
+    if (!key) continue;
+    const prev = map.get(key);
     if (!prev) {
-      map.set(g.pageNorm, { ...g });
+      map.set(key, { ...g });
     } else {
-      // Topla (aynı URL birden fazla satır)
+      // Topla (aynı path birden fazla satır)
       prev.clicks += g.clicks;
       prev.impressions += g.impressions;
     }
   }
 
   for (const r of records) {
-    const hit = map.get(r.sourceNorm);
+    const hit = map.get(pathKeyFromNormalized(r.sourceNorm));
     if (hit) {
       r.gscClicks = hit.clicks;
       r.gscImpressions = hit.impressions;

@@ -102,6 +102,22 @@ export function normalizeUrl(
   return `${path}${query}`;
 }
 
+/**
+ * Join anahtarı: normalizeUrl çıktısından host atılmış path (+ query).
+ * Kurallar (slash, harf, query) zaten normalizeUrl'de uygulanmıştır.
+ * Göreli anahtar `/path` olarak kalır; mutlak `host/path` → `/path`.
+ */
+export function pathKeyFromNormalized(normalized: string): string {
+  if (!normalized) return '';
+  const qIdx = normalized.indexOf('?');
+  const pathPart = qIdx >= 0 ? normalized.slice(0, qIdx) : normalized;
+  const query = qIdx >= 0 ? normalized.slice(qIdx) : '';
+  if (pathPart.startsWith('/')) return `${pathPart}${query}`;
+  const slash = pathPart.indexOf('/');
+  if (slash < 0) return `/${query}`;
+  return `${pathPart.slice(slash)}${query}`;
+}
+
 /** Path segment yüzde kodlamasını tutarlı hale getirir. */
 function normalizePercentEncoding(path: string): string {
   return path
